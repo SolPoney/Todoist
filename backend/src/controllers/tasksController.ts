@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma';
 
-// GET /api/tasks — récupère toutes les tâches
+// GET /api/tasks — récupère les tâches de l'utilisateur connecté
 export async function getTasks(req: Request, res: Response) {
   try {
     const tasks = await prisma.task.findMany({
+      where: { userId: req.userId },
       include: { project: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -17,10 +18,10 @@ export async function getTasks(req: Request, res: Response) {
 // POST /api/tasks — crée une nouvelle tâche
 export async function createTask(req: Request, res: Response) {
   try {
-    const { title, priority, dueDate, projectId, userId } = req.body;
+    const { title, priority, dueDate, projectId } = req.body;
 
-    if (!title || !userId) {
-      res.status(400).json({ error: 'title et userId sont requis' });
+    if (!title) {
+      res.status(400).json({ error: 'title est requis' });
       return;
     }
 
@@ -30,7 +31,7 @@ export async function createTask(req: Request, res: Response) {
         priority: priority ?? 4,
         dueDate: dueDate ? new Date(dueDate) : null,
         projectId: projectId ?? null,
-        userId,
+        userId: req.userId!,
       },
     });
     res.status(201).json(task);

@@ -2,18 +2,23 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import tasksRouter from './routes/tasks';
+import authRouter from './routes/auth';
+import { requireAuth } from './middleware/auth';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
 // Middlewares globaux
-app.use(cors());                  // Autorise les requêtes depuis le mobile
-app.use(express.json());          // Parse le body JSON des requêtes
+app.use(cors());
+app.use(express.json());
 
-// Routes
-app.use('/api/tasks', tasksRouter);
+// Routes publiques (pas besoin de token)
+app.use('/auth', authRouter);
 
-// Route de santé — pour vérifier que l'API tourne
+// Routes protégées (token JWT obligatoire)
+app.use('/api/tasks', requireAuth, tasksRouter);
+
+// Route de santé
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', message: 'API Todoist opérationnelle' });
 });

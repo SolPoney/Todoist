@@ -11,7 +11,7 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   onImport: (titles: string[]) => Promise<void>;
-  getExportData: () => { title: string }[];
+  getExportData: () => { title: string; dueDate: string; priority: number; project: string; isRecurring: string; createdAt: string }[];
 };
 
 export function ImportExportModal({ visible, onClose, onImport, getExportData }: Props) {
@@ -59,7 +59,11 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
     setLoading(true);
     try {
       const tasks = getExportData();
-      const csv = ['titre', ...tasks.map(t => t.title)].join('\n');
+      const header = 'titre;date_echeance;priorite;projet;recurrente;date_creation';
+      const rows = tasks.map(t =>
+        [t.title, t.dueDate, t.priority, t.project, t.isRecurring, t.createdAt].join(';')
+      );
+      const csv = [header, ...rows].join('\n');
       const path = FileSystem.documentDirectory + 'taches_export.csv';
       await FileSystem.writeAsStringAsync(path, csv, { encoding: 'utf8' });
       await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exporter les tâches' });

@@ -105,7 +105,14 @@ export function InboxScreen() {
           visible={importExportVisible}
           onClose={() => setImportExportVisible(false)}
           onImport={importTasks}
-          getExportData={() => tasks.filter(t => !t.isCompleted).map(t => ({ title: t.title }))}
+          getExportData={() => tasks.filter(t => !t.isCompleted).map(t => ({
+            title: t.title,
+            dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString('fr-FR') : '',
+            priority: t.priority,
+            project: t.project?.name ?? '',
+            isRecurring: t.isRecurring ? 'oui' : 'non',
+            createdAt: new Date(t.createdAt).toLocaleDateString('fr-FR'),
+          }))}
         />
       </View>
   );

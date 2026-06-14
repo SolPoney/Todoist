@@ -5,10 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FAB } from '../components/FAB';
 import { colors } from '../theme/colors';
 
-const projects = [
-  { id: '1', name: 'Welcome 👋', count: 20 },
-  { id: '2', name: 'ENA' },
-];
+const projects: { id: string; name: string; count?: number }[] = [];
 
 type MenuItem = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -31,7 +28,7 @@ export function BrowseScreen() {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>T</Text>
         </View>
-        <Text style={styles.username}>thomas.soret37</Text>
+        <Text style={styles.username}>Mon espace</Text>
         <View style={styles.profileIcons}>
           <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="notifications-outline" size={22} color={colors.text} />

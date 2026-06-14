@@ -9,8 +9,15 @@ type Props = {
 
 export function FAB({ onPress }: Props) {
   return (
-    <TouchableOpacity style={styles.fab} onPress={onPress} activeOpacity={0.8}>
-      <Ionicons name="add" size={30} color="#fff" />
+    <TouchableOpacity
+      style={styles.fab}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityLabel="Ajouter une tâche"
+      accessibilityRole="button"
+      accessibilityHint="Ouvre le formulaire de création de tâche"
+    >
+      <Ionicons name="add" size={30} color="#fff" accessibilityElementsHidden />
     </TouchableOpacity>
   );
 }

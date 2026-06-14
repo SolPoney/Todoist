@@ -39,33 +39,46 @@ export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
         onLongPress={() => setExpanded(!expanded)}
         activeOpacity={1}
         delayLongPress={400}
+        accessibilityLabel={task.title}
+        accessibilityRole="button"
+        accessibilityHint="Appui long pour afficher les actions"
+        accessibilityState={{ expanded }}
       >
         <TaskItem task={task} onComplete={onComplete} />
-        <Animated.View style={[styles.flash, { opacity: flashOpacity, backgroundColor: flashColor }]} pointerEvents="none" />
+        <Animated.View style={[styles.flash, { opacity: flashOpacity, backgroundColor: flashColor }]} pointerEvents="none" accessibilityElementsHidden />
       </TouchableOpacity>
 
       {/* Actions qui apparaissent après appui long */}
       {expanded && (
-        <View style={styles.actions}>
+        <View style={styles.actions} accessibilityRole="toolbar" accessibilityLabel="Actions sur la tâche">
           <TouchableOpacity
             style={[styles.actionBtn, styles.completeBtn]}
             onPress={handleComplete}
+            accessibilityLabel="Terminer la tâche"
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+            <Ionicons name="checkmark-circle-outline" size={18} color="#fff" accessibilityElementsHidden />
             <Text style={styles.actionText}>Terminer</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.deleteBtn]}
             onPress={handleDelete}
+            accessibilityLabel="Supprimer la tâche"
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={18} color="#fff" />
+            <Ionicons name="trash-outline" size={18} color="#fff" accessibilityElementsHidden />
             <Text style={styles.actionText}>Supprimer</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.cancelBtn]}
             onPress={() => setExpanded(false)}
+            accessibilityLabel="Annuler"
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.actionText}>Annuler</Text>
           </TouchableOpacity>

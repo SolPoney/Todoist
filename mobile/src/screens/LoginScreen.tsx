@@ -67,6 +67,8 @@ export function LoginScreen() {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
+              accessibilityLabel="Nom"
+              accessibilityHint="Entrez votre nom"
             />
           )}
           <TextInput
@@ -77,6 +79,9 @@ export function LoginScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            accessibilityLabel="Adresse email"
+            accessibilityHint="Entrez votre adresse email"
+            textContentType="emailAddress"
           />
           <TextInput
             style={styles.input}
@@ -85,6 +90,9 @@ export function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            accessibilityLabel="Mot de passe"
+            accessibilityHint="Entrez votre mot de passe"
+            textContentType="password"
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -94,6 +102,9 @@ export function LoginScreen() {
             onPress={handleSubmit}
             disabled={loading}
             activeOpacity={0.8}
+            accessibilityLabel={mode === 'login' ? 'Se connecter' : 'S\'inscrire'}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading
               ? <ActivityIndicator color="#fff" />
@@ -103,7 +114,12 @@ export function LoginScreen() {
             }
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} style={styles.switchBtn}>
+          <TouchableOpacity
+            onPress={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+            style={styles.switchBtn}
+            accessibilityRole="button"
+            accessibilityLabel={mode === 'login' ? 'Pas encore de compte ? S\'inscrire' : 'Déjà un compte ? Se connecter'}
+          >
             <Text style={styles.switchText}>
               {mode === 'login' ? 'Pas encore de compte ? S\'inscrire' : 'Déjà un compte ? Se connecter'}
             </Text>

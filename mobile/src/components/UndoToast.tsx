@@ -32,9 +32,15 @@ export function UndoToast({ message, onUndo, onDismiss }: Props) {
   }, []);
 
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
+    <Animated.View style={[styles.container, { opacity }]} accessibilityLiveRegion="polite" accessibilityRole="alert">
       <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity onPress={onUndo} style={styles.undoBtn}>
+      <TouchableOpacity
+        onPress={onUndo}
+        style={styles.undoBtn}
+        accessibilityLabel="Annuler l'action"
+        accessibilityRole="button"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
         <Text style={styles.undoText}>Annuler</Text>
       </TouchableOpacity>
     </Animated.View>

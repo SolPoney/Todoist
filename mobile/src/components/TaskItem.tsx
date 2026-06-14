@@ -20,25 +20,41 @@ type Props = {
 export function TaskItem({ task, onComplete }: Props) {
   const dateColor = task.isOverdue ? colors.accent : colors.textSecondary;
 
+  const overdueLabel = task.isOverdue ? ', en retard' : '';
+  const dateLabel = task.date ? `, échéance le ${task.date}${overdueLabel}` : '';
+  const projectLabel = task.project ? `, projet ${task.project}` : '';
+  const recurringLabel = task.isRecurring ? ', récurrente' : '';
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessible={false}>
       {/* Checkbox circulaire */}
-      <TouchableOpacity onPress={() => onComplete(task.id)} style={styles.checkboxArea}>
-        <View style={styles.circle} />
+      <TouchableOpacity
+        onPress={() => onComplete(task.id)}
+        style={styles.checkboxArea}
+        accessibilityLabel={`Marquer comme terminée : ${task.title}`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: false }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <View style={styles.circle} accessibilityElementsHidden />
       </TouchableOpacity>
 
       {/* Contenu : titre + méta */}
-      <View style={styles.content}>
+      <View
+        style={styles.content}
+        accessible
+        accessibilityLabel={`${task.title}${dateLabel}${projectLabel}${recurringLabel}`}
+      >
         <Text style={styles.title}>{task.title}</Text>
 
         {(task.date || task.project) && (
-          <View style={styles.meta}>
+          <View style={styles.meta} accessible={false}>
             {task.date && (
               <View style={styles.dateRow}>
-                <Ionicons name="calendar-outline" size={12} color={dateColor} />
+                <Ionicons name="calendar-outline" size={12} color={dateColor} accessibilityElementsHidden />
                 <Text style={[styles.metaText, { color: dateColor }]}> {task.date}</Text>
                 {task.isRecurring && (
-                  <Ionicons name="refresh-outline" size={12} color={dateColor} style={styles.recurringIcon} />
+                  <Ionicons name="refresh-outline" size={12} color={dateColor} style={styles.recurringIcon} accessibilityElementsHidden />
                 )}
               </View>
             )}

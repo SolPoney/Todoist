@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { colors } from '../theme/colors';
+import { fontSize, lineHeight } from '../theme/typography';
 
 type Props = {
   message: string;
@@ -68,17 +69,21 @@ const styles = StyleSheet.create({
   },
   message: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: fontSize.md,
+    lineHeight: lineHeight.md,
     flex: 1,
   },
   undoBtn: {
     marginLeft: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   undoText: {
     color: colors.accent,
-    fontSize: 14,
+    fontSize: fontSize.md,
+    lineHeight: lineHeight.md,
     fontWeight: '700',
   },
 });

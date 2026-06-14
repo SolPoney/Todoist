@@ -13,6 +13,7 @@ import { UndoToast } from '../components/UndoToast';
 import { Task } from '../components/TaskItem';
 import { useTasksStore } from '../stores/tasksStore';
 import { colors } from '../theme/colors';
+import { fontSize, lineHeight } from '../theme/typography';
 
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
@@ -178,15 +179,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
+  title: { fontSize: fontSize.xxl, fontWeight: '700', color: colors.text, lineHeight: lineHeight.xxl },
   headerIcons: { flexDirection: 'row', gap: 4 },
   iconBtn: { padding: 6 },
   list: { paddingBottom: 100 },
-  errorText: { color: colors.accent, textAlign: 'center', marginTop: 40 },
+  errorText: { color: colors.accent, textAlign: 'center', marginTop: 40, fontSize: fontSize.md, lineHeight: lineHeight.md },
   emptyText: {
     color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 60,
-    fontSize: 15,
+    fontSize: fontSize.md,
+    lineHeight: lineHeight.md,
   },
 });

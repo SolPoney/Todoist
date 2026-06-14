@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { TaskItem, Task } from './TaskItem';
 import { colors } from '../theme/colors';
+import { fontSize } from '../theme/typography';
 
 type Props = {
   task: Task;
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
   completeBtn: { backgroundColor: '#22C55E' },
   deleteBtn: { backgroundColor: '#EF4444' },
   cancelBtn: { backgroundColor: colors.border },
-  actionText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  actionText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
   flash: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 4,

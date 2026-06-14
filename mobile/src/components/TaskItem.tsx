@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { fontSize, lineHeight, letterSpacing } from '../theme/typography';
 
 export type Task = {
   id: string;
@@ -92,10 +93,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: fontSize.lg,
     fontWeight: '600',
     color: colors.text,
-    lineHeight: 22,
+    lineHeight: lineHeight.lg,
+    letterSpacing: letterSpacing.normal,
   },
   meta: {
     flexDirection: 'row',
@@ -108,13 +110,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metaText: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
   },
   recurringIcon: {
     marginLeft: 4,
   },
   project: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     color: colors.textSecondary,
   },
 });

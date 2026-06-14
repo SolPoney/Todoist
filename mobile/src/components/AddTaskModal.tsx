@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { fontSize, lineHeight, letterSpacing } from '../theme/typography';
 
 type Props = {
   visible: boolean;
@@ -86,14 +87,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    fontSize: 13,
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     color: colors.textSecondary,
     fontWeight: '500',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.wide,
   },
   input: {
-    fontSize: 17,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

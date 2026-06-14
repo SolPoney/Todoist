@@ -5,28 +5,36 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
+import { apiRegister } from '../api/auth';
 import { colors } from '../theme/colors';
 
 export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const login = useAuthStore((s) => s.login);
 
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin() {
-    if (!email || !password) {
+  async function handleSubmit() {
+    if (!email || !password || (mode === 'register' && !name)) {
       setError('Remplis tous les champs');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      if (mode === 'register') {
+        await apiRegister(email, password, name);
+        await login(email, password);
+      } else {
+        await login(email, password);
+      }
     } catch {
-      setError('Email ou mot de passe incorrect');
+      setError(mode === 'register' ? 'Erreur lors de l\'inscription' : 'Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
     }
@@ -44,11 +52,23 @@ export function LoginScreen() {
             <Text style={styles.logoText}>✓</Text>
           </View>
           <Text style={styles.title}>Todoist</Text>
-          <Text style={styles.subtitle}>Connecte-toi pour continuer</Text>
+          <Text style={styles.subtitle}>
+            {mode === 'login' ? 'Connecte-toi pour continuer' : 'Crée ton compte'}
+          </Text>
         </View>
 
         {/* Formulaire */}
         <View style={styles.form}>
+          {mode === 'register' && (
+            <TextInput
+              style={styles.input}
+              placeholder="Nom"
+              placeholderTextColor={colors.textMuted}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+          )}
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -71,14 +91,22 @@ export function LoginScreen() {
 
           <TouchableOpacity
             style={styles.button}
-            onPress={handleLogin}
+            onPress={handleSubmit}
             disabled={loading}
             activeOpacity={0.8}
           >
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.buttonText}>Se connecter</Text>
+              : <Text style={styles.buttonText}>
+                  {mode === 'login' ? 'Se connecter' : 'S\'inscrire'}
+                </Text>
             }
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} style={styles.switchBtn}>
+            <Text style={styles.switchText}>
+              {mode === 'login' ? 'Pas encore de compte ? S\'inscrire' : 'Déjà un compte ? Se connecter'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -153,5 +181,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  switchBtn: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  switchText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
 });

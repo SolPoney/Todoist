@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.34:3000';
+const BASE_URL = 'https://todoist-backend-ygpv.onrender.com';
 
 // Wrapper autour de fetch natif avec JWT automatique
 export async function apiFetch(path: string, options: RequestInit = {}) {

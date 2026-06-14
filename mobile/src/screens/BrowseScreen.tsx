@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FAB } from '../components/FAB';
+import { useAuthStore } from '../stores/authStore';
 import { colors } from '../theme/colors';
 
 const projects: { id: string; name: string; count?: number }[] = [];
@@ -20,6 +21,7 @@ const menuItems: MenuItem[] = [
 
 export function BrowseScreen() {
   const insets = useSafeAreaInsets();
+  const logout = useAuthStore((s) => s.logout);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -82,6 +84,13 @@ export function BrowseScreen() {
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="people-outline" size={18} color={colors.textSecondary} style={styles.menuIcon} />
           <Text style={[styles.menuLabel, { color: colors.textSecondary }]}>Ajouter une équipe</Text>
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.menuItem} onPress={logout}>
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" style={styles.menuIcon} />
+          <Text style={[styles.menuLabel, { color: '#EF4444' }]}>Se déconnecter</Text>
         </TouchableOpacity>
       </ScrollView>
 

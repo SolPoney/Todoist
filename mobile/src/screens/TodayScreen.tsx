@@ -13,17 +13,17 @@ export function TodayScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Aujourd'hui</Text>
+      <View style={styles.header} accessibilityRole="header">
+        <View accessible accessibilityLabel={`Aujourd'hui, ${todayTasks.length} tâches`}>
+          <Text style={styles.title} accessibilityRole="header">Aujourd'hui</Text>
           <Text style={styles.subtitle}>{todayTasks.length} tâches</Text>
         </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="list" size={22} color={colors.text} />
+        <View style={styles.headerIcons} accessible={false}>
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Changer la vue" accessibilityRole="button">
+            <Ionicons name="list" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Plus d'options" accessibilityRole="button">
+            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
         </View>
       </View>
@@ -32,10 +32,10 @@ export function TodayScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>En retard</Text>
         <View style={styles.sectionActions}>
-          <TouchableOpacity>
+          <TouchableOpacity accessibilityLabel="Reporter les tâches en retard" accessibilityRole="button">
             <Text style={styles.reporterBtn}>Reporter</Text>
           </TouchableOpacity>
-          <Ionicons name="chevron-up" size={18} color={colors.text} style={{ marginLeft: 8 }} />
+          <Ionicons name="chevron-up" size={18} color={colors.text} style={{ marginLeft: 8 }} accessibilityElementsHidden />
         </View>
       </View>
 

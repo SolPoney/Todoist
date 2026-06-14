@@ -35,31 +35,31 @@ export function UpcomingScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Prochainement</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="list" size={22} color={colors.text} />
+      <View style={styles.header} accessibilityRole="header">
+        <Text style={styles.title} accessibilityRole="header">Prochainement</Text>
+        <View style={styles.headerIcons} accessible={false}>
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Changer la vue" accessibilityRole="button">
+            <Ionicons name="list" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Plus d'options" accessibilityRole="button">
+            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Sélecteur de mois */}
-      <TouchableOpacity style={styles.monthRow}>
+      <TouchableOpacity style={styles.monthRow} accessibilityLabel={`Mois : ${capitalizedMonth}. Appuyer pour changer`} accessibilityRole="button">
         <Text style={styles.monthLabel}>{capitalizedMonth}</Text>
-        <Ionicons name="chevron-down" size={16} color={colors.text} style={{ marginLeft: 4 }} />
+        <Ionicons name="chevron-down" size={16} color={colors.text} style={{ marginLeft: 4 }} accessibilityElementsHidden />
       </TouchableOpacity>
 
       {/* Calendrier semaine */}
-      <View style={styles.weekCalendar}>
+      <View style={styles.weekCalendar} accessibilityRole="grid" accessibilityLabel="Calendrier de la semaine">
         {weekDays.map((day, i) => (
-          <View key={i} style={styles.dayColumn}>
-            <Text style={styles.dayLabel}>{day.label}</Text>
+          <View key={i} style={styles.dayColumn} accessible accessibilityLabel={`${day.label} ${day.number}${day.isToday ? ', aujourd\'hui' : ''}`}>
+            <Text style={styles.dayLabel} accessibilityElementsHidden>{day.label}</Text>
             <View style={[styles.dayCircle, day.isToday && styles.dayCircleToday]}>
-              <Text style={[styles.dayNumber, day.isToday && styles.dayNumberToday]}>
+              <Text style={[styles.dayNumber, day.isToday && styles.dayNumberToday]} accessibilityElementsHidden>
                 {day.number}
               </Text>
             </View>
@@ -68,16 +68,16 @@ export function UpcomingScreen() {
       </View>
 
       {/* Séparateur */}
-      <View style={styles.separator} />
+      <View style={styles.separator} accessibilityElementsHidden />
 
       {/* Section En retard */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>En retard</Text>
         <View style={styles.sectionActions}>
-          <TouchableOpacity>
+          <TouchableOpacity accessibilityLabel="Reporter les tâches en retard" accessibilityRole="button">
             <Text style={styles.reporterBtn}>Reporter</Text>
           </TouchableOpacity>
-          <Ionicons name="chevron-up" size={18} color={colors.text} style={{ marginLeft: 8 }} />
+          <Ionicons name="chevron-up" size={18} color={colors.text} style={{ marginLeft: 8 }} accessibilityElementsHidden />
         </View>
       </View>
 

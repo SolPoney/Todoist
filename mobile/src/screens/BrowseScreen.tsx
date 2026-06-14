@@ -26,17 +26,17 @@ export function BrowseScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Profil utilisateur */}
-      <View style={styles.profileRow}>
-        <View style={styles.avatar}>
+      <View style={styles.profileRow} accessible accessibilityLabel="Mon espace">
+        <View style={styles.avatar} accessibilityElementsHidden>
           <Text style={styles.avatarText}>T</Text>
         </View>
         <Text style={styles.username}>Mon espace</Text>
-        <View style={styles.profileIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+        <View style={styles.profileIcons} accessible={false}>
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Notifications" accessibilityRole="button">
+            <Ionicons name="notifications-outline" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="settings-outline" size={22} color={colors.text} />
+          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Paramètres" accessibilityRole="button">
+            <Ionicons name="settings-outline" size={22} color={colors.text} accessibilityElementsHidden />
           </TouchableOpacity>
         </View>
       </View>
@@ -44,31 +44,31 @@ export function BrowseScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Menu principal */}
         {menuItems.map((item) => (
-          <TouchableOpacity key={item.label} style={styles.menuItem}>
-            <Ionicons name={item.icon} size={20} color={colors.accent} style={styles.menuIcon} />
+          <TouchableOpacity key={item.label} style={styles.menuItem} accessibilityLabel={item.label} accessibilityRole="button">
+            <Ionicons name={item.icon} size={20} color={colors.accent} style={styles.menuIcon} accessibilityElementsHidden />
             <Text style={styles.menuLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
 
         {/* Séparateur */}
-        <View style={styles.divider} />
+        <View style={styles.divider} accessibilityElementsHidden />
 
         {/* Mes projets */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mes projets</Text>
-          <View style={styles.sectionActions}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Ionicons name="add" size={20} color={colors.text} />
+          <Text style={styles.sectionTitle} accessibilityRole="header">Mes projets</Text>
+          <View style={styles.sectionActions} accessible={false}>
+            <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Ajouter un projet" accessibilityRole="button">
+              <Ionicons name="add" size={20} color={colors.text} accessibilityElementsHidden />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Ionicons name="chevron-up" size={18} color={colors.text} />
+            <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Réduire la section projets" accessibilityRole="button">
+              <Ionicons name="chevron-up" size={18} color={colors.text} accessibilityElementsHidden />
             </TouchableOpacity>
           </View>
         </View>
 
         {projects.map((project) => (
-          <TouchableOpacity key={project.id} style={styles.projectItem}>
-            <Ionicons name="hashtag" size={16} color={colors.accent} style={styles.menuIcon} />
+          <TouchableOpacity key={project.id} style={styles.projectItem} accessibilityLabel={`Projet ${project.name}${project.count ? `, ${project.count} tâches` : ''}`} accessibilityRole="button">
+            <Ionicons name="hashtag" size={16} color={colors.accent} style={styles.menuIcon} accessibilityElementsHidden />
             <Text style={styles.projectName}>{project.name}</Text>
             {project.count && (
               <Text style={styles.projectCount}>{project.count}</Text>
@@ -76,20 +76,20 @@ export function BrowseScreen() {
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} style={styles.menuIcon} />
+        <TouchableOpacity style={styles.menuItem} accessibilityLabel="Gérer les projets" accessibilityRole="button">
+          <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} style={styles.menuIcon} accessibilityElementsHidden />
           <Text style={[styles.menuLabel, { color: colors.textSecondary }]}>Gérer les projets</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="people-outline" size={18} color={colors.textSecondary} style={styles.menuIcon} />
+        <TouchableOpacity style={styles.menuItem} accessibilityLabel="Ajouter une équipe" accessibilityRole="button">
+          <Ionicons name="people-outline" size={18} color={colors.textSecondary} style={styles.menuIcon} accessibilityElementsHidden />
           <Text style={[styles.menuLabel, { color: colors.textSecondary }]}>Ajouter une équipe</Text>
         </TouchableOpacity>
 
-        <View style={styles.divider} />
+        <View style={styles.divider} accessibilityElementsHidden />
 
-        <TouchableOpacity style={styles.menuItem} onPress={logout}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" style={styles.menuIcon} />
+        <TouchableOpacity style={styles.menuItem} onPress={logout} accessibilityLabel="Se déconnecter" accessibilityRole="button">
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" style={styles.menuIcon} accessibilityElementsHidden />
           <Text style={[styles.menuLabel, { color: '#EF4444' }]}>Se déconnecter</Text>
         </TouchableOpacity>
       </ScrollView>

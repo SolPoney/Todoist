@@ -42,23 +42,23 @@ export function InboxScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Boîte de réception</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Ionicons name="list" size={22} color={colors.text} />
+        <View style={styles.header} accessibilityRole="header">
+          <Text style={styles.title} accessibilityRole="header">Boîte de réception</Text>
+          <View style={styles.headerIcons} accessible={false}>
+            <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Changer la vue" accessibilityRole="button">
+              <Ionicons name="list" size={22} color={colors.text} accessibilityElementsHidden />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => setImportExportVisible(true)}>
-              <Ionicons name="swap-vertical-outline" size={22} color={colors.text} />
+            <TouchableOpacity style={styles.iconBtn} onPress={() => setImportExportVisible(true)} accessibilityLabel="Importer ou exporter des tâches" accessibilityRole="button">
+              <Ionicons name="swap-vertical-outline" size={22} color={colors.text} accessibilityElementsHidden />
             </TouchableOpacity>
           </View>
         </View>
 
         {isLoading && !refreshing && (
-          <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} accessibilityLabel="Chargement des tâches" />
         )}
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="assertive">{error}</Text>}
 
         <FlatList
           data={displayTasks}

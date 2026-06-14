@@ -28,13 +28,13 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
         style={styles.overlay}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
+        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} accessibilityLabel="Fermer le formulaire" accessibilityRole="button" />
 
-        <View style={styles.sheet}>
+        <View style={styles.sheet} accessibilityViewIsModal>
           {/* Indicateur de drag */}
-          <View style={styles.handle} />
+          <View style={styles.handle} accessibilityElementsHidden />
 
-          <Text style={styles.label}>Nom de la tâche</Text>
+          <Text style={styles.label} accessibilityRole="header">Nom de la tâche</Text>
 
           <TextInput
             style={styles.input}
@@ -46,19 +46,24 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
             onSubmitEditing={handleSubmit}
             returnKeyType="done"
             color={colors.text}
+            accessibilityLabel="Nom de la tâche"
+            accessibilityHint="Entrez le nom de votre tâche"
           />
 
-          <View style={styles.actions}>
-            <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-              <Ionicons name="close" size={22} color={colors.textSecondary} />
+          <View style={styles.actions} accessible={false}>
+            <TouchableOpacity onPress={onClose} style={styles.cancelBtn} accessibilityLabel="Annuler" accessibilityRole="button">
+              <Ionicons name="close" size={22} color={colors.textSecondary} accessibilityElementsHidden />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleSubmit}
               style={[styles.submitBtn, !title.trim() && styles.submitBtnDisabled]}
               disabled={!title.trim()}
+              accessibilityLabel="Créer la tâche"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !title.trim() }}
             >
-              <Ionicons name="arrow-up" size={20} color="#fff" />
+              <Ionicons name="arrow-up" size={20} color="#fff" accessibilityElementsHidden />
             </TouchableOpacity>
           </View>
         </View>

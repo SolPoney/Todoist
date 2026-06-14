@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { ApiTask, apiGetTasks, apiCreateTask, apiCompleteTask, apiDeleteTask } from '../api/tasks';
 
 type PendingAction = {
-  type: 'complete' | 'delete';
+  type: 'complete' | 'delete' | 'delete_bulk';
   task: ApiTask;
+  tasks?: ApiTask[];
+  count?: number;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -17,6 +19,7 @@ type TasksStore = {
   importTasks: (titles: string[]) => Promise<void>;
   completeTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  deleteTasksBulk: (ids: string[]) => void;
   undoAction: () => void;
   confirmAction: () => void;
 };
@@ -47,15 +50,12 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     set({ tasks: [...newTasks, ...get().tasks] });
   },
 
-  // Retire la tâche visuellement, attend 4s avant l'API
   completeTask: (id) => {
     const task = get().tasks.find(t => t.id === id);
     if (!task) return;
 
-    // Annule une action précédente en cours si elle existe
     if (get().pendingAction) get().confirmAction();
 
-    // Retire visuellement
     set({ tasks: get().tasks.filter(t => t.id !== id) });
 
     const timer = setTimeout(() => {
@@ -82,19 +82,34 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     set({ pendingAction: { type: 'delete', task, timer } });
   },
 
-  // L'utilisateur appuie sur "Annuler" → remet la tâche
+  deleteTasksBulk: (ids) => {
+    const deletedTasks = get().tasks.filter(t => ids.includes(t.id));
+    if (deletedTasks.length === 0) return;
+
+    if (get().pendingAction) get().confirmAction();
+
+    set({ tasks: get().tasks.filter(t => !ids.includes(t.id)) });
+
+    const timer = setTimeout(() => {
+      deletedTasks.forEach(t => apiDeleteTask(t.id));
+      set({ pendingAction: null });
+    }, 4000);
+
+    set({ pendingAction: { type: 'delete_bulk', task: deletedTasks[0], tasks: deletedTasks, count: deletedTasks.length, timer } });
+  },
+
   undoAction: () => {
     const pending = get().pendingAction;
     if (!pending) return;
 
     clearTimeout(pending.timer);
+    const restoredTasks = pending.tasks ?? [pending.task];
     set({
-      tasks: [pending.task, ...get().tasks],
+      tasks: [...restoredTasks, ...get().tasks],
       pendingAction: null,
     });
   },
 
-  // L'utilisateur n'a pas annulé → on exécute l'action API immédiatement
   confirmAction: () => {
     const pending = get().pendingAction;
     if (!pending) return;
@@ -102,6 +117,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     clearTimeout(pending.timer);
     if (pending.type === 'complete') apiCompleteTask(pending.task.id);
     if (pending.type === 'delete') apiDeleteTask(pending.task.id);
+    if (pending.type === 'delete_bulk') (pending.tasks ?? [pending.task]).forEach(t => apiDeleteTask(t.id));
     set({ pendingAction: null });
   },
 }));

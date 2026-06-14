@@ -16,7 +16,7 @@ import { colors } from '../theme/colors';
 
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
-  const { tasks, isLoading, error, fetchTasks, createTask, importTasks, completeTask, deleteTask, pendingAction, undoAction, confirmAction } = useTasksStore();
+  const { tasks, isLoading, error, fetchTasks, createTask, importTasks, completeTask, deleteTask, deleteTasksBulk, pendingAction, undoAction, confirmAction } = useTasksStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [importExportVisible, setImportExportVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,7 +54,7 @@ export function InboxScreen() {
   }
 
   function handleDeleteSelected() {
-    selectedIds.forEach(id => deleteTask(id));
+    deleteTasksBulk(Array.from(selectedIds));
     setSelectedIds(new Set());
   }
 
@@ -136,7 +136,11 @@ export function InboxScreen() {
 
       {pendingAction && (
         <UndoToast
-          message={pendingAction.type === 'delete' ? 'Tâche supprimée' : 'Tâche terminée'}
+          message={
+            pendingAction.type === 'complete' ? 'Tâche terminée' :
+            pendingAction.type === 'delete_bulk' ? `${pendingAction.count} tâche(s) supprimée(s)` :
+            'Tâche supprimée'
+          }
           onUndo={undoAction}
           onDismiss={confirmAction}
         />

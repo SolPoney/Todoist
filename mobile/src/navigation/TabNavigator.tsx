@@ -38,7 +38,7 @@ export function TabNavigator() {
         component={InboxScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="tray-outline" size={size} color={color} />
+            <Ionicons name="archive-outline" size={size} color={color} />
           ),
         }}
       />

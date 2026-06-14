@@ -8,13 +8,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SwipeableTaskItem } from '../components/SwipeableTaskItem';
 import { AddTaskModal } from '../components/AddTaskModal';
 import { FAB } from '../components/FAB';
+import { UndoToast } from '../components/UndoToast';
 import { Task } from '../components/TaskItem';
 import { useTasksStore } from '../stores/tasksStore';
 import { colors } from '../theme/colors';
 
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
-  const { tasks, isLoading, error, fetchTasks, createTask, completeTask, deleteTask } = useTasksStore();
+  const { tasks, isLoading, error, fetchTasks, createTask, completeTask, deleteTask, pendingAction, undoAction, confirmAction } = useTasksStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -83,6 +84,14 @@ export function InboxScreen() {
         />
 
         <FAB onPress={() => setModalVisible(true)} />
+
+        {pendingAction && (
+          <UndoToast
+            message={pendingAction.type === 'delete' ? 'Tâche supprimée' : 'Tâche terminée'}
+            onUndo={undoAction}
+            onDismiss={confirmAction}
+          />
+        )}
 
         <AddTaskModal
           visible={modalVisible}

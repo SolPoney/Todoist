@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TaskItem, Task } from './TaskItem';
 import { colors } from '../theme/colors';
@@ -12,6 +12,26 @@ type Props = {
 
 export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const flashOpacity = useRef(new Animated.Value(0)).current;
+  const [flashColor, setFlashColor] = useState('#22C55E');
+
+  function handleComplete() {
+    setExpanded(false);
+    setFlashColor('#22C55E');
+    Animated.sequence([
+      Animated.timing(flashOpacity, { toValue: 0.6, duration: 250, useNativeDriver: true }),
+      Animated.timing(flashOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+    ]).start(() => onComplete(task.id));
+  }
+
+  function handleDelete() {
+    setExpanded(false);
+    setFlashColor('#EF4444');
+    Animated.sequence([
+      Animated.timing(flashOpacity, { toValue: 0.6, duration: 250, useNativeDriver: true }),
+      Animated.timing(flashOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+    ]).start(() => onDelete(task.id));
+  }
 
   return (
     <View>
@@ -21,6 +41,7 @@ export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
         delayLongPress={400}
       >
         <TaskItem task={task} onComplete={onComplete} />
+        <Animated.View style={[styles.flash, { opacity: flashOpacity, backgroundColor: flashColor }]} pointerEvents="none" />
       </TouchableOpacity>
 
       {/* Actions qui apparaissent après appui long */}
@@ -28,7 +49,7 @@ export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.completeBtn]}
-            onPress={() => { onComplete(task.id); setExpanded(false); }}
+            onPress={handleComplete}
           >
             <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
             <Text style={styles.actionText}>Terminer</Text>
@@ -36,7 +57,7 @@ export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
 
           <TouchableOpacity
             style={[styles.actionBtn, styles.deleteBtn]}
-            onPress={() => { onDelete(task.id); setExpanded(false); }}
+            onPress={handleDelete}
           >
             <Ionicons name="trash-outline" size={18} color="#fff" />
             <Text style={styles.actionText}>Supprimer</Text>
@@ -74,4 +95,8 @@ const styles = StyleSheet.create({
   deleteBtn: { backgroundColor: '#EF4444' },
   cancelBtn: { backgroundColor: colors.border },
   actionText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  flash: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 4,
+  },
 });

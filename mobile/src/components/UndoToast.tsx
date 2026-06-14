@@ -1,0 +1,78 @@
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { colors } from '../theme/colors';
+
+type Props = {
+  message: string;
+  onUndo: () => void;
+  onDismiss: () => void;
+};
+
+export function UndoToast({ message, onUndo, onDismiss }: Props) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Apparition
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    // Disparition automatique après 4 secondes
+    const timer = setTimeout(() => {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(onDismiss);
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Animated.View style={[styles.container, { opacity }]}>
+      <Text style={styles.message}>{message}</Text>
+      <TouchableOpacity onPress={onUndo} style={styles.undoBtn}>
+        <Text style={styles.undoText}>Annuler</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 90,
+    left: 16,
+    right: 16,
+    backgroundColor: '#323232',
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  message: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+  },
+  undoBtn: {
+    marginLeft: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  undoText: {
+    color: colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+});

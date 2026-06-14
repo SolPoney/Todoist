@@ -61,7 +61,7 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
 
   async function handleImportJSON() {
     setMessage('');
-    const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
     if (result.canceled) return;
 
     setLoading(true);
@@ -69,7 +69,7 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
       const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
       const data = JSON.parse(content);
       const tasks = Array.isArray(data) ? data : data.taches ?? data.tasks ?? [];
-      const titles = tasks.map((t: { title?: string; titre?: string }) => t.title ?? t.titre).filter(Boolean) as string[];
+      const titles = tasks.map((t: { title?: string; titre?: string }) => t.title ?? t.titre ?? '').filter((s: string) => s.length > 0);
       await onImport(titles);
       setMessage(`${titles.length} tâche(s) importée(s) !`);
     } catch {

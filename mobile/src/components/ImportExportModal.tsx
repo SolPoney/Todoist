@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { colors } from '../theme/colors';
 
@@ -26,10 +26,24 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
     setLoading(true);
     try {
       const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-      const titles = content
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0 && line !== 'titre' && line !== 'title');
+      const lines = content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+
+      // Détecte le séparateur (virgule ou point-virgule)
+      const separator = lines[0].includes(';') ? ';' : ',';
+      const firstLine = lines[0].toLowerCase();
+
+      // Vérifie si la première ligne est un en-tête
+      const hasHeader = firstLine.includes('tache') || firstLine.includes('title') || firstLine.includes('titre') || firstLine.includes('task');
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+
+      // Si plusieurs colonnes, prend la 2ème (index 1) si header contient "tache"/"title", sinon la 1ère
+      const titleIndex = hasHeader && (firstLine.split(separator).findIndex(h => h.includes('tache') || h.includes('title') || h.includes('titre') || h.includes('task'))) > 0
+        ? firstLine.split(separator).findIndex(h => h.includes('tache') || h.includes('title') || h.includes('titre') || h.includes('task'))
+        : 0;
+
+      const titles = dataLines
+        .map(line => line.split(separator)[titleIndex]?.trim())
+        .filter(Boolean) as string[];
 
       await onImport(titles);
       setMessage(`${titles.length} tâche(s) importée(s) !`);
@@ -47,10 +61,11 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
       const tasks = getExportData();
       const csv = ['titre', ...tasks.map(t => t.title)].join('\n');
       const path = FileSystem.documentDirectory + 'taches_export.csv';
-      await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
+      await FileSystem.writeAsStringAsync(path, csv, { encoding: 'utf8' });
       await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exporter les tâches' });
-    } catch {
-      setMessage('Erreur lors de l\'export');
+    } catch (e) {
+      console.error('Export error:', e);
+      setMessage('Erreur lors de l\'export: ' + String(e));
     } finally {
       setLoading(false);
     }

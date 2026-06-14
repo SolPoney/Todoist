@@ -14,6 +14,7 @@ type TasksStore = {
   pendingAction: PendingAction | null;
   fetchTasks: () => Promise<void>;
   createTask: (title: string) => Promise<void>;
+  importTasks: (titles: string[]) => Promise<void>;
   completeTask: (id: string) => void;
   deleteTask: (id: string) => void;
   undoAction: () => void;
@@ -39,6 +40,11 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
   createTask: async (title) => {
     const task = await apiCreateTask(title);
     set({ tasks: [task, ...get().tasks] });
+  },
+
+  importTasks: async (titles) => {
+    const newTasks = await Promise.all(titles.map(title => apiCreateTask(title)));
+    set({ tasks: [...newTasks, ...get().tasks] });
   },
 
   // Retire la tâche visuellement, attend 4s avant l'API

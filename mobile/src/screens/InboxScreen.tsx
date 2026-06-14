@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SwipeableTaskItem } from '../components/SwipeableTaskItem';
 import { AddTaskModal } from '../components/AddTaskModal';
+import { ImportExportModal } from '../components/ImportExportModal';
 import { FAB } from '../components/FAB';
 import { UndoToast } from '../components/UndoToast';
 import { Task } from '../components/TaskItem';
@@ -15,8 +16,9 @@ import { colors } from '../theme/colors';
 
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
-  const { tasks, isLoading, error, fetchTasks, createTask, completeTask, deleteTask, pendingAction, undoAction, confirmAction } = useTasksStore();
+  const { tasks, isLoading, error, fetchTasks, createTask, importTasks, completeTask, deleteTask, pendingAction, undoAction, confirmAction } = useTasksStore();
   const [modalVisible, setModalVisible] = useState(false);
+  const [importExportVisible, setImportExportVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -46,8 +48,8 @@ export function InboxScreen() {
             <TouchableOpacity style={styles.iconBtn}>
               <Ionicons name="list" size={22} color={colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+            <TouchableOpacity style={styles.iconBtn} onPress={() => setImportExportVisible(true)}>
+              <Ionicons name="swap-vertical-outline" size={22} color={colors.text} />
             </TouchableOpacity>
           </View>
         </View>
@@ -97,6 +99,13 @@ export function InboxScreen() {
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           onSubmit={createTask}
+        />
+
+        <ImportExportModal
+          visible={importExportVisible}
+          onClose={() => setImportExportVisible(false)}
+          onImport={importTasks}
+          getExportData={() => tasks.filter(t => !t.isCompleted).map(t => ({ title: t.title }))}
         />
       </View>
   );

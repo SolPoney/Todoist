@@ -69,7 +69,13 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
       const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
       const data = JSON.parse(content);
       const tasks = Array.isArray(data) ? data : data.taches ?? data.tasks ?? [];
-      const titles = tasks.map((t: { title?: string; titre?: string }) => t.title ?? t.titre ?? '').filter((s: string) => s.length > 0);
+      const titleKeys = ['title', 'titre', 'tache', 'task', 'nom', 'name', 'libelle', 'label'];
+      const titles = tasks.map((t: Record<string, unknown>) => {
+        const key = titleKeys.find(k => typeof t[k] === 'string' && (t[k] as string).length > 0);
+        if (key) return t[key] as string;
+        // fallback : prend la première valeur string non-numérique de l'objet
+        return Object.values(t).find(v => typeof v === 'string' && isNaN(Number(v)) && (v as string).length > 0) as string ?? '';
+      }).filter((s: string) => s.length > 0);
       await onImport(titles);
       setMessage(`${titles.length} tâche(s) importée(s) !`);
     } catch {

@@ -20,6 +20,8 @@ export function InboxScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [importExportVisible, setImportExportVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const isSelecting = selectedIds.size > 0;
 
   useEffect(() => {
     fetchTasks();
@@ -29,6 +31,35 @@ export function InboxScreen() {
     setRefreshing(true);
     await fetchTasks();
     setRefreshing(false);
+  }
+
+  function handleLongPress(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }
+
+  function handleTapInSelection(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function handleDeleteSelected() {
+    selectedIds.forEach(id => deleteTask(id));
+    setSelectedIds(new Set());
+  }
+
+  function handleCancelSelection() {
+    setSelectedIds(new Set());
   }
 
   const displayTasks: Task[] = tasks.filter(t => !t.isCompleted).map(t => ({
@@ -41,7 +72,18 @@ export function InboxScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
+      {/* Header */}
+      {isSelecting ? (
+        <View style={styles.header} accessibilityRole="header">
+          <TouchableOpacity onPress={handleCancelSelection} accessibilityLabel="Annuler la sélection" accessibilityRole="button">
+            <Ionicons name="close" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>{selectedIds.size} sélectionnée(s)</Text>
+          <TouchableOpacity onPress={handleDeleteSelected} accessibilityLabel={`Supprimer ${selectedIds.size} tâches`} accessibilityRole="button">
+            <Ionicons name="trash-outline" size={24} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+      ) : (
         <View style={styles.header} accessibilityRole="header">
           <Text style={styles.title} accessibilityRole="header">Boîte de réception</Text>
           <View style={styles.headerIcons} accessible={false}>
@@ -53,68 +95,73 @@ export function InboxScreen() {
             </TouchableOpacity>
           </View>
         </View>
+      )}
 
-        {isLoading && !refreshing && (
-          <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} accessibilityLabel="Chargement des tâches" />
-        )}
+      {isLoading && !refreshing && (
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} accessibilityLabel="Chargement des tâches" />
+      )}
 
-        {error && <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="assertive">{error}</Text>}
+      {error && <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="assertive">{error}</Text>}
 
-        <FlatList
-          data={displayTasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <SwipeableTaskItem
-              task={item}
-              onComplete={completeTask}
-              onDelete={deleteTask}
-            />
-          )}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.accent}
-            />
-          }
-          ListEmptyComponent={
-            !isLoading ? (
-              <Text style={styles.emptyText}>Aucune tâche — bien joué !</Text>
-            ) : null
-          }
-        />
-
-        <FAB onPress={() => setModalVisible(true)} />
-
-        {pendingAction && (
-          <UndoToast
-            message={pendingAction.type === 'delete' ? 'Tâche supprimée' : 'Tâche terminée'}
-            onUndo={undoAction}
-            onDismiss={confirmAction}
+      <FlatList
+        data={displayTasks}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <SwipeableTaskItem
+            task={item}
+            onComplete={completeTask}
+            onDelete={deleteTask}
+            isSelecting={isSelecting}
+            isSelected={selectedIds.has(item.id)}
+            onLongPress={handleLongPress}
+            onTapInSelection={handleTapInSelection}
           />
         )}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+          />
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            <Text style={styles.emptyText}>Aucune tâche — bien joué !</Text>
+          ) : null
+        }
+      />
 
-        <AddTaskModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onSubmit={createTask}
-        />
+      {!isSelecting && <FAB onPress={() => setModalVisible(true)} />}
 
-        <ImportExportModal
-          visible={importExportVisible}
-          onClose={() => setImportExportVisible(false)}
-          onImport={importTasks}
-          getExportData={() => tasks.filter(t => !t.isCompleted).map(t => ({
-            title: t.title,
-            dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString('fr-FR') : '',
-            priority: t.priority,
-            project: t.project?.name ?? '',
-            isRecurring: t.isRecurring ? 'oui' : 'non',
-            createdAt: new Date(t.createdAt).toLocaleDateString('fr-FR'),
-          }))}
+      {pendingAction && (
+        <UndoToast
+          message={pendingAction.type === 'delete' ? 'Tâche supprimée' : 'Tâche terminée'}
+          onUndo={undoAction}
+          onDismiss={confirmAction}
         />
-      </View>
+      )}
+
+      <AddTaskModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSubmit={createTask}
+      />
+
+      <ImportExportModal
+        visible={importExportVisible}
+        onClose={() => setImportExportVisible(false)}
+        onImport={importTasks}
+        getExportData={() => tasks.filter(t => !t.isCompleted).map(t => ({
+          title: t.title,
+          dueDate: t.dueDate ? new Date(t.dueDate).toLocaleDateString('fr-FR') : '',
+          priority: t.priority,
+          project: t.project?.name ?? '',
+          isRecurring: t.isRecurring ? 'oui' : 'non',
+          createdAt: new Date(t.createdAt).toLocaleDateString('fr-FR'),
+        }))}
+      />
+    </View>
   );
 }
 

@@ -8,9 +8,13 @@ type Props = {
   task: Task;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  isSelecting?: boolean;
+  isSelected?: boolean;
+  onLongPress?: (id: string) => void;
+  onTapInSelection?: (id: string) => void;
 };
 
-export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
+export function SwipeableTaskItem({ task, onComplete, onDelete, isSelecting, isSelected, onLongPress, onTapInSelection }: Props) {
   const [expanded, setExpanded] = useState(false);
   const flashOpacity = useRef(new Animated.Value(0)).current;
   const [flashColor, setFlashColor] = useState('#22C55E');
@@ -33,23 +37,42 @@ export function SwipeableTaskItem({ task, onComplete, onDelete }: Props) {
     ]).start(() => onDelete(task.id));
   }
 
+  function handlePress() {
+    if (isSelecting) {
+      onTapInSelection?.(task.id);
+    }
+  }
+
+  function handleLongPress() {
+    if (!isSelecting) {
+      onLongPress?.(task.id);
+    }
+  }
+
   return (
     <View>
       <TouchableOpacity
-        onLongPress={() => setExpanded(!expanded)}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
         activeOpacity={1}
         delayLongPress={400}
-        accessibilityLabel={task.title}
+        accessibilityLabel={isSelected ? `${task.title}, sélectionnée` : task.title}
         accessibilityRole="button"
-        accessibilityHint="Appui long pour afficher les actions"
-        accessibilityState={{ expanded }}
+        accessibilityHint={isSelecting ? 'Appuyer pour sélectionner ou désélectionner' : 'Appui long pour afficher les actions'}
+        accessibilityState={{ selected: isSelected }}
       >
-        <TaskItem task={task} onComplete={onComplete} />
+        <View style={isSelected ? styles.selectedOverlay : null} pointerEvents="none" />
+        <TaskItem task={task} onComplete={isSelecting ? () => {} : onComplete} />
+        {isSelected && (
+          <View style={styles.checkOverlay} pointerEvents="none">
+            <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
+          </View>
+        )}
         <Animated.View style={[styles.flash, { opacity: flashOpacity, backgroundColor: flashColor }]} pointerEvents="none" accessibilityElementsHidden />
       </TouchableOpacity>
 
-      {/* Actions qui apparaissent après appui long */}
-      {expanded && (
+      {/* Actions qui apparaissent après appui long — masquées en mode sélection */}
+      {expanded && !isSelecting && (
         <View style={styles.actions} accessibilityRole="toolbar" accessibilityLabel="Actions sur la tâche">
           <TouchableOpacity
             style={[styles.actionBtn, styles.completeBtn]}
@@ -111,5 +134,19 @@ const styles = StyleSheet.create({
   flash: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 4,
+  },
+  selectedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.accent,
+    opacity: 0.12,
+    zIndex: 1,
+  },
+  checkOverlay: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 2,
   },
 });

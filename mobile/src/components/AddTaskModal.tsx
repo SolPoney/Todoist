@@ -31,7 +31,6 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
         <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} accessibilityLabel="Fermer le formulaire" accessibilityRole="button" />
 
         <View style={styles.sheet} accessibilityViewIsModal>
-          {/* Indicateur de drag */}
           <View style={styles.handle} accessibilityElementsHidden />
 
           <Text style={styles.label} accessibilityRole="header">Nom de la tâche</Text>
@@ -47,23 +46,12 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
             returnKeyType="done"
             color={colors.text}
             accessibilityLabel="Nom de la tâche"
-            accessibilityHint="Entrez le nom de votre tâche"
+            accessibilityHint="Entrez le nom de votre tâche puis appuyez sur Entrée"
           />
 
           <View style={styles.actions} accessible={false}>
             <TouchableOpacity onPress={onClose} style={styles.cancelBtn} accessibilityLabel="Annuler" accessibilityRole="button">
               <Ionicons name="close" size={22} color={colors.textSecondary} accessibilityElementsHidden />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleSubmit}
-              style={[styles.submitBtn, !title.trim() && styles.submitBtnDisabled]}
-              disabled={!title.trim()}
-              accessibilityLabel="Créer la tâche"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !title.trim() }}
-            >
-              <Ionicons name="arrow-up" size={20} color="#fff" accessibilityElementsHidden />
             </TouchableOpacity>
           </View>
         </View>
@@ -112,22 +100,10 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 4,
   },
   cancelBtn: {
     padding: 8,
-  },
-  submitBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitBtnDisabled: {
-    backgroundColor: colors.textMuted,
   },
 });

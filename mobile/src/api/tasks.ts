@@ -1,4 +1,4 @@
-import client from './client';
+import { apiFetch } from './client';
 
 export type ApiTask = {
   id: string;
@@ -12,21 +12,24 @@ export type ApiTask = {
   project: { id: string; name: string } | null;
 };
 
-export async function apiGetTasks(): Promise<ApiTask[]> {
-  const res = await client.get('/api/tasks');
-  return res.data;
+export function apiGetTasks(): Promise<ApiTask[]> {
+  return apiFetch('/api/tasks');
 }
 
-export async function apiCreateTask(title: string, priority = 4): Promise<ApiTask> {
-  const res = await client.post('/api/tasks', { title, priority });
-  return res.data;
+export function apiCreateTask(title: string, priority = 4): Promise<ApiTask> {
+  return apiFetch('/api/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ title, priority }),
+  });
 }
 
-export async function apiCompleteTask(id: string): Promise<ApiTask> {
-  const res = await client.patch(`/api/tasks/${id}`, { isCompleted: true });
-  return res.data;
+export function apiCompleteTask(id: string): Promise<ApiTask> {
+  return apiFetch(`/api/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isCompleted: true }),
+  });
 }
 
-export async function apiDeleteTask(id: string): Promise<void> {
-  await client.delete(`/api/tasks/${id}`);
+export function apiDeleteTask(id: string): Promise<null> {
+  return apiFetch(`/api/tasks/${id}`, { method: 'DELETE' });
 }

@@ -1,22 +1,33 @@
-import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, FlatList, TouchableOpacity,
+  StyleSheet, ActivityIndicator, RefreshControl,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TaskItem, Task } from '../components/TaskItem';
+import { SwipeableTaskItem } from '../components/SwipeableTaskItem';
+import { AddTaskModal } from '../components/AddTaskModal';
 import { FAB } from '../components/FAB';
+import { Task } from '../components/TaskItem';
 import { useTasksStore } from '../stores/tasksStore';
 import { colors } from '../theme/colors';
 
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
-  const { tasks, isLoading, error, fetchTasks, completeTask } = useTasksStore();
+  const { tasks, isLoading, error, fetchTasks, createTask, completeTask, deleteTask } = useTasksStore();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Charge les tâches au premier affichage
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // Convertit les tâches API au format du composant TaskItem
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchTasks();
+    setRefreshing(false);
+  }
+
   const displayTasks: Task[] = tasks.filter(t => !t.isCompleted).map(t => ({
     id: t.id,
     title: t.title,
@@ -27,42 +38,58 @@ export function InboxScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Boîte de réception</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="list" size={22} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
-          </TouchableOpacity>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Boîte de réception</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.iconBtn}>
+              <Ionicons name="list" size={22} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn}>
+              <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {isLoading && (
-        <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
-      )}
+        {isLoading && !refreshing && (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
+        )}
 
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
-      )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
 
-      {!isLoading && (
         <FlatList
           data={displayTasks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TaskItem task={item} onComplete={completeTask} />
+            <SwipeableTaskItem
+              task={item}
+              onComplete={completeTask}
+              onDelete={deleteTask}
+            />
           )}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.accent}
+            />
+          }
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucune tâche — bien joué !</Text>
+            !isLoading ? (
+              <Text style={styles.emptyText}>Aucune tâche — bien joué !</Text>
+            ) : null
           }
         />
-      )}
 
-      <FAB onPress={() => console.log('Add task')} />
-    </View>
+        <FAB onPress={() => setModalVisible(true)} />
+
+        <AddTaskModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSubmit={createTask}
+        />
+      </View>
   );
 }
 
@@ -80,5 +107,10 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 6 },
   list: { paddingBottom: 100 },
   errorText: { color: colors.accent, textAlign: 'center', marginTop: 40 },
-  emptyText: { color: colors.textSecondary, textAlign: 'center', marginTop: 60, fontSize: 15 },
+  emptyText: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 60,
+    fontSize: 15,
+  },
 });

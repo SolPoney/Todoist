@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import { ColorTheme } from '../theme/colors';
 import { fontSize, lineHeight } from '../theme/typography';
 
 type Props = {
@@ -11,6 +12,9 @@ type Props = {
 
 export function UndoToast({ message, onUndo, onDismiss }: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
+  const colors = useColors();
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     // Apparition
@@ -48,42 +52,44 @@ export function UndoToast({ message, onUndo, onDismiss }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 90,
-    left: 16,
-    right: 16,
-    backgroundColor: '#323232',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  message: {
-    color: '#fff',
-    fontSize: fontSize.md,
-    lineHeight: lineHeight.md,
-    flex: 1,
-  },
-  undoBtn: {
-    marginLeft: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  undoText: {
-    color: colors.accent,
-    fontSize: fontSize.md,
-    lineHeight: lineHeight.md,
-    fontWeight: '700',
-  },
-});
+function createStyles(colors: ColorTheme) {
+  return StyleSheet.create({
+    container: {
+      position: 'absolute',
+      bottom: 90,
+      left: 16,
+      right: 16,
+      backgroundColor: '#323232',
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+    },
+    message: {
+      color: '#fff',
+      fontSize: fontSize.md,
+      lineHeight: lineHeight.md,
+      flex: 1,
+    },
+    undoBtn: {
+      marginLeft: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    undoText: {
+      color: colors.accent,
+      fontSize: fontSize.md,
+      lineHeight: lineHeight.md,
+      fontWeight: '700',
+    },
+  });
+}

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import { ColorTheme } from '../theme/colors';
 
 type TaskExport = {
   title: string;
@@ -26,6 +27,9 @@ type Props = {
 export function ImportExportModal({ visible, onClose, onImport, getExportData }: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const colors = useColors();
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   async function handleImportCSV() {
     setMessage('');
@@ -154,64 +158,66 @@ export function ImportExportModal({ visible, onClose, onImport, getExportData }:
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 24,
-    gap: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 4,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  btnJSON: {
-    backgroundColor: '#7C3AED',
-  },
-  btnSecondary: {
-    backgroundColor: '#2563EB',
-  },
-  btnSecondaryJSON: {
-    backgroundColor: '#0F766E',
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  message: {
-    color: '#22C55E',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  cancelBtn: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  cancelText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-  },
-});
+function createStyles(colors: ColorTheme) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      padding: 24,
+      gap: 10,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 4,
+    },
+    btn: {
+      backgroundColor: colors.accent,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: 'center',
+    },
+    btnJSON: {
+      backgroundColor: '#7C3AED',
+    },
+    btnSecondary: {
+      backgroundColor: '#2563EB',
+    },
+    btnSecondaryJSON: {
+      backgroundColor: '#0F766E',
+    },
+    btnText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    message: {
+      color: '#22C55E',
+      textAlign: 'center',
+      fontSize: 14,
+    },
+    cancelBtn: {
+      alignItems: 'center',
+      paddingVertical: 12,
+      marginTop: 4,
+    },
+    cancelText: {
+      color: colors.textSecondary,
+      fontSize: 15,
+    },
+  });
+}

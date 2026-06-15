@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Modal, StyleSheet, KeyboardAvoidingView, Platform,
@@ -12,32 +12,40 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   onSubmit: (title: string, dueDate?: string) => void;
+  initialTitle: string;
+  initialDueDate?: string | null;
 };
 
 function formatDateFR(date: Date): string {
   return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
-  const [title, setTitle] = useState('');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+export function EditTaskModal({ visible, onClose, onSubmit, initialTitle, initialDueDate }: Props) {
+  const [title, setTitle] = useState(initialTitle);
+  const [dueDate, setDueDate] = useState<Date | null>(
+    initialDueDate ? new Date(initialDueDate) : null
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const colors = useColors();
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  // Sync with props when modal opens
+  useEffect(() => {
+    if (visible) {
+      setTitle(initialTitle);
+      setDueDate(initialDueDate ? new Date(initialDueDate) : null);
+      setShowDatePicker(false);
+    }
+  }, [visible, initialTitle, initialDueDate]);
+
   function handleSubmit() {
     if (!title.trim()) return;
     onSubmit(title.trim(), dueDate?.toISOString());
-    setTitle('');
-    setDueDate(null);
-    setShowDatePicker(false);
     onClose();
   }
 
   function handleClose() {
-    setTitle('');
-    setDueDate(null);
     setShowDatePicker(false);
     onClose();
   }
@@ -65,11 +73,11 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
         <View style={styles.sheet} accessibilityViewIsModal>
           <View style={styles.handle} accessibilityElementsHidden />
 
-          <Text style={styles.label} accessibilityRole="header">Nom de la tâche</Text>
+          <Text style={styles.label} accessibilityRole="header">Modifier la tâche</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="ex: Appeler le médecin"
+            placeholder="Nom de la tâche"
             placeholderTextColor={colors.textMuted}
             value={title}
             onChangeText={setTitle}
@@ -78,7 +86,7 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
             returnKeyType="done"
             color={colors.text}
             accessibilityLabel="Nom de la tâche"
-            accessibilityHint="Entrez le nom de votre tâche puis appuyez sur Entrée"
+            accessibilityHint="Modifiez le nom de votre tâche"
           />
 
           {/* Bouton date ou date sélectionnée */}
@@ -124,11 +132,13 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
               onPress={handleSubmit}
               style={[styles.submitBtn, !title.trim() ? styles.submitBtnDisabled : null]}
               disabled={!title.trim()}
-              accessibilityLabel="Enregistrer la tâche"
+              accessibilityLabel="Enregistrer les modifications"
               accessibilityRole="button"
               accessibilityState={{ disabled: !title.trim() }}
             >
-              <Ionicons name="arrow-up-circle" size={32} color={title.trim() ? colors.accent : colors.border} accessibilityElementsHidden />
+              <Text style={[styles.submitBtnText, !title.trim() ? styles.submitBtnTextDisabled : null]}>
+                Enregistrer
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -234,10 +244,22 @@ function createStyles(colors: ColorTheme) {
       padding: 8,
     },
     submitBtn: {
-      padding: 4,
+      backgroundColor: colors.accent,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 10,
     },
     submitBtnDisabled: {
-      opacity: 0.5,
+      backgroundColor: colors.border,
+    },
+    submitBtnText: {
+      color: '#fff',
+      fontSize: fontSize.md,
+      lineHeight: lineHeight.md,
+      fontWeight: '600',
+    },
+    submitBtnTextDisabled: {
+      color: colors.textMuted,
     },
   });
 }

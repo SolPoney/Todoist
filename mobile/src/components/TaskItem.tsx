@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import { ColorTheme } from '../theme/colors';
 import { fontSize, lineHeight, letterSpacing } from '../theme/typography';
 
 export type Task = {
@@ -16,15 +17,49 @@ export type Task = {
 type Props = {
   task: Task;
   onComplete: (id: string) => void;
+  onTitlePress?: () => void;
 };
 
-export function TaskItem({ task, onComplete }: Props) {
-  const dateColor = task.isOverdue ? colors.accent : colors.textSecondary;
+export function TaskItem({ task, onComplete, onTitlePress }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const overdueLabel = task.isOverdue ? ', en retard' : '';
   const dateLabel = task.date ? `, échéance le ${task.date}${overdueLabel}` : '';
   const projectLabel = task.project ? `, projet ${task.project}` : '';
   const recurringLabel = task.isRecurring ? ', récurrente' : '';
+
+  const content = (
+    <View
+      style={styles.content}
+      accessible={!onTitlePress}
+      accessibilityLabel={onTitlePress ? undefined : `${task.title}${dateLabel}${projectLabel}${recurringLabel}`}
+    >
+      <Text style={styles.title}>{task.title}</Text>
+
+      {(task.date || task.project) && (
+        <View style={styles.meta} accessible={false}>
+          {task.date && (
+            <View style={[styles.dateChip, task.isOverdue ? styles.dateChipOverdue : styles.dateChipNormal]}>
+              <Ionicons
+                name={task.isOverdue ? 'time-outline' : 'calendar-outline'}
+                size={12}
+                color={task.isOverdue ? '#EF4444' : colors.textSecondary}
+                accessibilityElementsHidden
+              />
+              <Text style={[styles.dateChipText, task.isOverdue ? styles.dateChipTextOverdue : null]}>
+                {task.date}
+                {task.isRecurring && ' ↻'}
+              </Text>
+            </View>
+          )}
+          {task.project && (
+            <Text style={styles.project}>{task.project}</Text>
+          )}
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.container} accessible={false}>
@@ -41,84 +76,87 @@ export function TaskItem({ task, onComplete }: Props) {
       </TouchableOpacity>
 
       {/* Contenu : titre + méta */}
-      <View
-        style={styles.content}
-        accessible
-        accessibilityLabel={`${task.title}${dateLabel}${projectLabel}${recurringLabel}`}
-      >
-        <Text style={styles.title}>{task.title}</Text>
-
-        {(task.date || task.project) && (
-          <View style={styles.meta} accessible={false}>
-            {task.date && (
-              <View style={styles.dateRow}>
-                <Ionicons name="calendar-outline" size={12} color={dateColor} accessibilityElementsHidden />
-                <Text style={[styles.metaText, { color: dateColor }]}> {task.date}</Text>
-                {task.isRecurring && (
-                  <Ionicons name="refresh-outline" size={12} color={dateColor} style={styles.recurringIcon} accessibilityElementsHidden />
-                )}
-              </View>
-            )}
-            {task.project && (
-              <Text style={styles.project}>{task.project}</Text>
-            )}
-          </View>
-        )}
-      </View>
+      {onTitlePress ? (
+        <TouchableOpacity
+          onPress={onTitlePress}
+          activeOpacity={0.7}
+          accessibilityLabel={`${task.title}${dateLabel}${projectLabel}${recurringLabel}`}
+          accessibilityRole="button"
+          style={styles.content}
+        >
+          {content}
+        </TouchableOpacity>
+      ) : (
+        content
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  checkboxArea: {
-    marginTop: 2,
-    marginRight: 14,
-  },
-  circle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: colors.textMuted,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: colors.text,
-    lineHeight: lineHeight.lg,
-    letterSpacing: letterSpacing.normal,
-  },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 12,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.sm,
-  },
-  recurringIcon: {
-    marginLeft: 4,
-  },
-  project: {
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.sm,
-    color: colors.textSecondary,
-  },
-});
+function createStyles(colors: ColorTheme) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    checkboxArea: {
+      marginTop: 2,
+      marginRight: 14,
+    },
+    circle: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: colors.textMuted,
+    },
+    content: {
+      flex: 1,
+    },
+    title: {
+      fontSize: fontSize.lg,
+      fontWeight: '600',
+      color: colors.text,
+      lineHeight: lineHeight.lg,
+      letterSpacing: letterSpacing.normal,
+    },
+    meta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      gap: 12,
+    },
+    dateChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 6,
+      gap: 4,
+    },
+    dateChipNormal: {
+      backgroundColor: colors.border,
+    },
+    dateChipOverdue: {
+      backgroundColor: '#EF444420',
+    },
+    dateChipText: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.textSecondary,
+    },
+    dateChipTextOverdue: {
+      color: '#EF4444',
+      fontWeight: '600',
+    },
+    project: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.textSecondary,
+    },
+  });
+}

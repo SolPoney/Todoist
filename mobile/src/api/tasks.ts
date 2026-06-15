@@ -16,10 +16,10 @@ export function apiGetTasks(): Promise<ApiTask[]> {
   return apiFetch('/api/tasks');
 }
 
-export function apiCreateTask(title: string, priority = 4): Promise<ApiTask> {
+export function apiCreateTask(title: string, priority = 4, dueDate?: string): Promise<ApiTask> {
   return apiFetch('/api/tasks', {
     method: 'POST',
-    body: JSON.stringify({ title, priority }),
+    body: JSON.stringify({ title, priority, ...(dueDate ? { dueDate } : {}) }),
   });
 }
 
@@ -32,4 +32,11 @@ export function apiCompleteTask(id: string): Promise<ApiTask> {
 
 export function apiDeleteTask(id: string): Promise<null> {
   return apiFetch(`/api/tasks/${id}`, { method: 'DELETE' });
+}
+
+export function apiUpdateTask(id: string, data: { title?: string; dueDate?: string | null }): Promise<ApiTask> {
+  return apiFetch(`/api/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }

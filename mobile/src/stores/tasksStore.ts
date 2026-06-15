@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { ApiTask, apiGetTasks, apiCreateTask, apiCompleteTask, apiDeleteTask } from '../api/tasks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ApiTask, apiGetTasks, apiCreateTask, apiCompleteTask, apiDeleteTask, apiUpdateTask } from '../api/tasks';
 
 type PendingAction = {
   type: 'complete' | 'delete' | 'delete_bulk';
@@ -15,13 +16,15 @@ type TasksStore = {
   error: string | null;
   pendingAction: PendingAction | null;
   fetchTasks: () => Promise<void>;
-  createTask: (title: string) => Promise<void>;
+  createTask: (title: string, dueDate?: string) => Promise<void>;
+  updateTask: (id: string, title: string, dueDate?: string | null) => Promise<void>;
   importTasks: (titles: string[]) => Promise<void>;
   completeTask: (id: string) => void;
   deleteTask: (id: string) => void;
   deleteTasksBulk: (ids: string[]) => void;
   undoAction: () => void;
   confirmAction: () => void;
+  reorderTasks: (orderedIds: string[]) => Promise<void>;
 };
 
 export const useTasksStore = create<TasksStore>((set, get) => ({
@@ -34,15 +37,30 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const tasks = await apiGetTasks();
-      set({ tasks, isLoading: false });
+      const savedOrder = await AsyncStorage.getItem('task_order');
+      if (savedOrder) {
+        const orderedIds: string[] = JSON.parse(savedOrder);
+        const ordered = [
+          ...orderedIds.map(id => tasks.find(t => t.id === id)).filter(Boolean) as typeof tasks,
+          ...tasks.filter(t => !orderedIds.includes(t.id)),
+        ];
+        set({ tasks: ordered, isLoading: false });
+      } else {
+        set({ tasks, isLoading: false });
+      }
     } catch {
       set({ error: 'Impossible de charger les tâches', isLoading: false });
     }
   },
 
-  createTask: async (title) => {
-    const task = await apiCreateTask(title);
+  createTask: async (title, dueDate?) => {
+    const task = await apiCreateTask(title, 4, dueDate);
     set({ tasks: [task, ...get().tasks] });
+  },
+
+  updateTask: async (id, title, dueDate) => {
+    const updated = await apiUpdateTask(id, { title, dueDate: dueDate ?? null });
+    set({ tasks: get().tasks.map(t => t.id === id ? updated : t) });
   },
 
   importTasks: async (titles) => {
@@ -96,6 +114,16 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     }, 4000);
 
     set({ pendingAction: { type: 'delete_bulk', task: deletedTasks[0], tasks: deletedTasks, count: deletedTasks.length, timer } });
+  },
+
+  reorderTasks: async (orderedIds) => {
+    const tasks = get().tasks;
+    const reordered = [
+      ...orderedIds.map(id => tasks.find(t => t.id === id)).filter(Boolean) as typeof tasks,
+      ...tasks.filter(t => !orderedIds.includes(t.id)),
+    ];
+    await AsyncStorage.setItem('task_order', JSON.stringify(orderedIds));
+    set({ tasks: reordered });
   },
 
   undoAction: () => {

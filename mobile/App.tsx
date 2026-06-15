@@ -1,22 +1,49 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { TutorialScreen } from './src/screens/TutorialScreen';
 import { useAuthStore } from './src/stores/authStore';
+import { useThemeStore } from './src/stores/themeStore';
 import { colors } from './src/theme/colors';
+
+const TUTORIAL_KEY = 'tutorial_seen';
 
 export default function App() {
   const { token, isLoading, loadToken } = useAuthStore();
+  const { isDark } = useThemeStore();
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialChecked, setTutorialChecked] = useState(false);
 
-  // Au démarrage, recharge le token depuis AsyncStorage
   useEffect(() => {
     loadToken();
+    useThemeStore.getState().loadTheme();
   }, []);
 
-  if (isLoading) {
+  // Check tutorial state once user is logged in
+  useEffect(() => {
+    if (!isLoading && token && !tutorialChecked) {
+      AsyncStorage.getItem(TUTORIAL_KEY).then(seen => {
+        if (!seen) setShowTutorial(true);
+        setTutorialChecked(true);
+      });
+    }
+    if (!token) {
+      setTutorialChecked(false);
+      setShowTutorial(false);
+    }
+  }, [isLoading, token]);
+
+  async function handleTutorialDone() {
+    await AsyncStorage.setItem(TUTORIAL_KEY, 'yes');
+    setShowTutorial(false);
+  }
+
+  if (isLoading || (token && !tutorialChecked)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color={colors.accent} size="large" />
@@ -27,8 +54,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <StatusBar style="light" />
-        {token ? <TabNavigator /> : <LoginScreen />}
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        {!token ? (
+          <LoginScreen />
+        ) : showTutorial ? (
+          <TutorialScreen onDone={handleTutorialDone} />
+        ) : (
+          <TabNavigator />
+        )}
       </NavigationContainer>
     </SafeAreaProvider>
   );

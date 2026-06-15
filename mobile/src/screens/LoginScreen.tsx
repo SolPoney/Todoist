@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
+  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/authStore';
 import { apiRegister } from '../api/auth';
-import { colors } from '../theme/colors';
+import { useColors } from '../theme/useColors';
+import { ColorTheme } from '../theme/colors';
 
 export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const login = useAuthStore((s) => s.login);
+  const colors = useColors();
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -42,10 +46,14 @@ export function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Logo / Titre */}
         <View style={styles.header}>
           <View style={styles.logo}>
@@ -53,7 +61,7 @@ export function LoginScreen() {
           </View>
           <Text style={styles.title}>Todoist</Text>
           <Text style={styles.subtitle}>
-            {mode === 'login' ? 'Connecte-toi pour continuer' : 'Crée ton compte'}
+            {mode === 'login' ? 'Connecte-toi à ton compte' : 'Crée ton compte'}
           </Text>
         </View>
 
@@ -82,6 +90,7 @@ export function LoginScreen() {
             accessibilityLabel="Adresse email"
             accessibilityHint="Entrez votre adresse email"
             textContentType="emailAddress"
+            autoComplete="off"
           />
           <TextInput
             style={styles.input}
@@ -93,6 +102,9 @@ export function LoginScreen() {
             accessibilityLabel="Mot de passe"
             accessibilityHint="Entrez votre mot de passe"
             textContentType="password"
+            autoComplete="off"
+            onSubmitEditing={handleSubmit}
+            returnKeyType="done"
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -125,85 +137,94 @@ export function LoginScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  logoText: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: '700',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  form: {
-    gap: 12,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.text,
-  },
-  error: {
-    color: colors.accent,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  switchBtn: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  switchText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-});
+function createStyles(colors: ColorTheme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 32,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 40,
+      width: '100%',
+    },
+    logo: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      backgroundColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    logoText: {
+      color: '#fff',
+      fontSize: 32,
+      fontWeight: '700',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      width: '100%',
+    },
+    form: {
+      gap: 12,
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: colors.text,
+    },
+    error: {
+      color: colors.accent,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    button: {
+      backgroundColor: colors.accent,
+      borderRadius: 10,
+      paddingVertical: 16,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    switchBtn: {
+      alignItems: 'center',
+      marginTop: 8,
+      width: '100%',
+    },
+    switchText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      textAlign: 'center',
+      width: '100%',
+    },
+  });
+}

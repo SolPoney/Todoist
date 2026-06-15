@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, RefreshControl, TextInput,
+  StyleSheet, ActivityIndicator, RefreshControl, TextInput, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,31 +13,42 @@ import { FAB } from '../components/FAB';
 import { UndoToast } from '../components/UndoToast';
 import { Task } from '../components/TaskItem';
 import { useTasksStore } from '../stores/tasksStore';
+import { useProjectsStore } from '../stores/projectsStore';
 import { useColors } from '../theme/useColors';
 import { ColorTheme } from '../theme/colors';
 import { fontSize, lineHeight } from '../theme/typography';
 
+type EditingTask = Task & {
+  priority?: number;
+  projectId?: string | null;
+  recurrenceRule?: string;
+};
+
 export function InboxScreen() {
   const insets = useSafeAreaInsets();
   const { tasks, isLoading, error, fetchTasks, createTask, updateTask, importTasks, completeTask, deleteTask, deleteTasksBulk, pendingAction, undoAction, confirmAction } = useTasksStore();
+  const { projects, fetchProjects } = useProjectsStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [importExportVisible, setImportExportVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<EditingTask | null>(null);
   const isSelecting = selectedIds.size > 0;
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState<string | null>(null);
   const colors = useColors();
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
     fetchTasks();
+    fetchProjects().catch(() => {});
   }, []);
 
   async function handleRefresh() {
     setRefreshing(true);
     await fetchTasks();
+    await fetchProjects().catch(() => {});
     setRefreshing(false);
   }
 
@@ -73,7 +84,16 @@ export function InboxScreen() {
   function handleEdit(id: string) {
     const t = tasks.find(t => t.id === id);
     if (!t) return;
-    setEditingTask({ id: t.id, title: t.title, date: t.dueDate ?? undefined, project: t.project?.name, isOverdue: false });
+    setEditingTask({
+      id: t.id,
+      title: t.title,
+      date: t.dueDate ?? undefined,
+      project: t.project?.name,
+      isOverdue: false,
+      priority: t.priority,
+      projectId: t.projectId,
+      recurrenceRule: t.recurrenceRule ?? 'none',
+    });
   }
 
   const displayTasks: Task[] = tasks.filter(t => !t.isCompleted).map(t => ({
@@ -82,11 +102,19 @@ export function InboxScreen() {
     date: t.dueDate ? new Date(t.dueDate).toLocaleDateString('fr-FR') : undefined,
     project: t.project?.name,
     isOverdue: t.dueDate ? new Date(t.dueDate) < new Date() : false,
+    priority: t.priority,
+    isRecurring: t.isRecurring,
   }));
 
-  const filteredTasks = searchQuery.trim()
-    ? displayTasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    : displayTasks;
+  const filteredTasks = displayTasks.filter(t => {
+    const matchesSearch = searchQuery.trim()
+      ? t.title.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    const matchesProject = selectedProjectFilter !== null
+      ? tasks.find(task => task.id === t.id)?.projectId === selectedProjectFilter
+      : true;
+    return matchesSearch && matchesProject;
+  });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -132,6 +160,46 @@ export function InboxScreen() {
             </TouchableOpacity>
           )}
         </View>
+      )}
+
+      {/* Project filter chips */}
+      {!isSelecting && projects.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.projectFilterScroll}
+          contentContainerStyle={styles.projectFilterContent}
+        >
+          <TouchableOpacity
+            onPress={() => setSelectedProjectFilter(null)}
+            style={[styles.filterChip, selectedProjectFilter === null && styles.filterChipSelected]}
+            accessibilityLabel="Tous les projets"
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedProjectFilter === null }}
+          >
+            <Text style={[styles.filterChipText, selectedProjectFilter === null && styles.filterChipTextSelected]}>
+              Tous
+            </Text>
+          </TouchableOpacity>
+          {projects.map(p => {
+            const isSelected = selectedProjectFilter === p.id;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => setSelectedProjectFilter(isSelected ? null : p.id)}
+                style={[styles.filterChip, isSelected && { backgroundColor: p.color, borderColor: p.color }]}
+                accessibilityLabel={`Filtrer par projet ${p.name}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+              >
+                <View style={[styles.filterDot, { backgroundColor: p.color }]} accessibilityElementsHidden />
+                <Text style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}>
+                  {p.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       )}
 
       {isLoading && !refreshing && (
@@ -187,7 +255,9 @@ export function InboxScreen() {
       <AddTaskModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSubmit={(title, dueDate) => createTask(title, dueDate)}
+        onSubmit={(title, dueDate, priority, projectId, recurrenceRule) =>
+          createTask(title, dueDate, priority, projectId, recurrenceRule)
+        }
       />
 
       <EditTaskModal
@@ -195,9 +265,12 @@ export function InboxScreen() {
         onClose={() => setEditingTask(null)}
         initialTitle={editingTask?.title ?? ''}
         initialDueDate={editingTask?.date}
-        onSubmit={(title, dueDate) => {
+        initialPriority={editingTask?.priority}
+        initialProjectId={editingTask?.projectId}
+        initialRecurrenceRule={editingTask?.recurrenceRule}
+        onSubmit={(title, dueDate, priority, projectId, recurrenceRule) => {
           if (editingTask) {
-            updateTask(editingTask.id, title, dueDate);
+            updateTask(editingTask.id, title, dueDate, priority, projectId, recurrenceRule);
             setEditingTask(null);
           }
         }}
@@ -262,6 +335,44 @@ function createStyles(colors: ColorTheme) {
       fontSize: fontSize.md,
       color: colors.text,
       lineHeight: lineHeight.md,
+    },
+    projectFilterScroll: {
+      flexGrow: 0,
+      marginBottom: 8,
+    },
+    projectFilterContent: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    filterChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      gap: 6,
+    },
+    filterChipSelected: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accent,
+    },
+    filterChipText: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.text,
+    },
+    filterChipTextSelected: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    filterDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
     },
   });
 }

@@ -36,8 +36,9 @@ model Task {
   isCompleted Boolean   @default(false)
   priority    Int       @default(4)  // 1=P1 (urgent) → 4=P4 (normal)
   dueDate     DateTime?
-  isRecurring Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  isRecurring     Boolean   @default(false)
+  recurrenceRule  String?   @default("none")  // none/daily/weekly/monthly
+  createdAt       DateTime  @default(now())
 
   userId      String
   user        User      @relation(fields: [userId], references: [id])

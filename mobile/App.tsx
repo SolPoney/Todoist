@@ -10,6 +10,7 @@ import { TutorialScreen } from './src/screens/TutorialScreen';
 import { useAuthStore } from './src/stores/authStore';
 import { useThemeStore } from './src/stores/themeStore';
 import { colors } from './src/theme/colors';
+import { requestNotificationPermission } from './src/utils/notifications';
 
 const TUTORIAL_KEY = 'tutorial_seen';
 
@@ -22,6 +23,7 @@ export default function App() {
   useEffect(() => {
     loadToken();
     useThemeStore.getState().loadTheme();
+    requestNotificationPermission().catch(() => {});
   }, []);
 
   // Check tutorial state once user is logged in

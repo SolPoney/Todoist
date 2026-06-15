@@ -1,18 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  Modal, StyleSheet, KeyboardAvoidingView, Platform,
+  Modal, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../theme/useColors';
 import { ColorTheme } from '../theme/colors';
 import { fontSize, lineHeight, letterSpacing } from '../theme/typography';
+import { useProjectsStore } from '../stores/projectsStore';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, dueDate?: string) => void;
+  onSubmit: (title: string, dueDate?: string, priority?: number, projectId?: string | null, recurrenceRule?: string) => void;
 };
+
+const PRIORITY_OPTIONS = [
+  { value: 1, label: 'P1', color: '#EF4444' },
+  { value: 2, label: 'P2', color: '#F59E0B' },
+  { value: 3, label: 'P3', color: '#3B82F6' },
+  { value: 4, label: 'P4', color: null }, // uses textMuted
+];
+
+const RECURRENCE_OPTIONS = [
+  { value: 'none', label: 'Jamais' },
+  { value: 'daily', label: 'Quotidien' },
+  { value: 'weekly', label: 'Hebdo' },
+  { value: 'monthly', label: 'Mensuel' },
+];
 
 function formatDateFR(date: Date): string {
   return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -22,16 +37,29 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [priority, setPriority] = useState(4);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [recurrenceRule, setRecurrenceRule] = useState('none');
   const colors = useColors();
-
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const { projects, fetchProjects } = useProjectsStore();
+
+  useEffect(() => {
+    if (visible) {
+      fetchProjects().catch(() => {});
+    }
+  }, [visible]);
 
   function handleSubmit() {
     if (!title.trim()) return;
-    onSubmit(title.trim(), dueDate?.toISOString());
+    onSubmit(title.trim(), dueDate?.toISOString(), priority, selectedProjectId, recurrenceRule);
     setTitle('');
     setDueDate(null);
     setShowDatePicker(false);
+    setPriority(4);
+    setSelectedProjectId(null);
+    setRecurrenceRule('none');
     onClose();
   }
 
@@ -39,6 +67,9 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
     setTitle('');
     setDueDate(null);
     setShowDatePicker(false);
+    setPriority(4);
+    setSelectedProjectId(null);
+    setRecurrenceRule('none');
     onClose();
   }
 
@@ -115,6 +146,95 @@ export function AddTaskModal({ visible, onClose, onSubmit }: Props) {
               </View>
             </View>
           )}
+
+          {/* Priorité */}
+          <View style={styles.sectionRow} accessible={false}>
+            <Text style={styles.sectionLabel}>Priorité</Text>
+            <View style={styles.chipRow} accessible={false}>
+              {PRIORITY_OPTIONS.map(opt => {
+                const chipColor = opt.color ?? colors.textMuted;
+                const isSelected = priority === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => setPriority(opt.value)}
+                    style={[
+                      styles.priorityChip,
+                      { borderColor: chipColor },
+                      isSelected && { backgroundColor: chipColor },
+                    ]}
+                    accessibilityLabel={`Priorité ${opt.label}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={[styles.priorityChipText, { color: isSelected ? '#fff' : chipColor }]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Projet */}
+          <View style={styles.sectionRow} accessible={false}>
+            <Text style={styles.sectionLabel}>Projet</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={styles.chipRow}>
+              <TouchableOpacity
+                onPress={() => setSelectedProjectId(null)}
+                style={[styles.projectChip, selectedProjectId === null && styles.projectChipSelected]}
+                accessibilityLabel="Aucun projet"
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedProjectId === null }}
+              >
+                <Text style={[styles.projectChipText, selectedProjectId === null && styles.projectChipTextSelected]}>
+                  Aucun
+                </Text>
+              </TouchableOpacity>
+              {projects.map(p => {
+                const isSelected = selectedProjectId === p.id;
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    onPress={() => setSelectedProjectId(p.id)}
+                    style={[styles.projectChip, isSelected && { backgroundColor: p.color, borderColor: p.color }]}
+                    accessibilityLabel={`Projet ${p.name}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <View style={[styles.projectDot, { backgroundColor: p.color }]} accessibilityElementsHidden />
+                    <Text style={[styles.projectChipText, isSelected && styles.projectChipTextSelected]}>
+                      {p.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Récurrence */}
+          <View style={styles.sectionRow} accessible={false}>
+            <Text style={styles.sectionLabel}>Récurrence</Text>
+            <View style={styles.chipRow} accessible={false}>
+              {RECURRENCE_OPTIONS.map(opt => {
+                const isSelected = recurrenceRule === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={() => setRecurrenceRule(opt.value)}
+                    style={[styles.recurrenceChip, isSelected && styles.recurrenceChipSelected]}
+                    accessibilityLabel={opt.label}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text style={[styles.recurrenceChipText, isSelected && styles.recurrenceChipTextSelected]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
 
           <View style={styles.actions} accessible={false}>
             <TouchableOpacity onPress={handleClose} style={styles.cancelBtn} accessibilityLabel="Annuler" accessibilityRole="button">
@@ -223,6 +343,88 @@ function createStyles(colors: ColorTheme) {
     },
     dateOptionClearText: {
       color: colors.textMuted,
+    },
+    sectionRow: {
+      gap: 8,
+    },
+    sectionLabel: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.textSecondary,
+      fontWeight: '500',
+      textTransform: 'uppercase',
+      letterSpacing: letterSpacing.wide,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      gap: 8,
+      flexWrap: 'nowrap',
+    },
+    horizontalScroll: {
+      flexGrow: 0,
+    },
+    priorityChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    priorityChipText: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      fontWeight: '600',
+    },
+    projectChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.border,
+      gap: 6,
+    },
+    projectChipSelected: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accent,
+    },
+    projectChipText: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.text,
+    },
+    projectChipTextSelected: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    projectDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    recurrenceChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.border,
+    },
+    recurrenceChipSelected: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accent,
+    },
+    recurrenceChipText: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+      color: colors.text,
+    },
+    recurrenceChipTextSelected: {
+      color: '#fff',
+      fontWeight: '600',
     },
     actions: {
       flexDirection: 'row',

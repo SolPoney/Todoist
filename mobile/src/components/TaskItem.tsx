@@ -12,6 +12,7 @@ export type Task = {
   project?: string;
   isRecurring?: boolean;
   isOverdue?: boolean;
+  priority?: number;
 };
 
 type Props = {
@@ -19,6 +20,15 @@ type Props = {
   onComplete: (id: string) => void;
   onTitlePress?: () => void;
 };
+
+function priorityBorderColor(priority: number | undefined, textMuted: string): string {
+  switch (priority) {
+    case 1: return '#EF4444';
+    case 2: return '#F59E0B';
+    case 3: return '#3B82F6';
+    default: return textMuted;
+  }
+}
 
 export function TaskItem({ task, onComplete, onTitlePress }: Props) {
   const colors = useColors();
@@ -28,6 +38,8 @@ export function TaskItem({ task, onComplete, onTitlePress }: Props) {
   const dateLabel = task.date ? `, échéance le ${task.date}${overdueLabel}` : '';
   const projectLabel = task.project ? `, projet ${task.project}` : '';
   const recurringLabel = task.isRecurring ? ', récurrente' : '';
+
+  const borderColor = priorityBorderColor(task.priority, colors.textMuted);
 
   const content = (
     <View
@@ -72,7 +84,7 @@ export function TaskItem({ task, onComplete, onTitlePress }: Props) {
         accessibilityState={{ checked: false }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <View style={styles.circle} accessibilityElementsHidden />
+        <View style={[styles.circle, { borderColor }]} accessibilityElementsHidden />
       </TouchableOpacity>
 
       {/* Contenu : titre + méta */}

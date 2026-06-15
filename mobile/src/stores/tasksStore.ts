@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiTask, apiGetTasks, apiCreateTask, apiCompleteTask, apiDeleteTask, apiUpdateTask } from '../api/tasks';
+import { scheduleTaskNotification, cancelTaskNotification } from '../utils/notifications';
 
 type PendingAction = {
   type: 'complete' | 'delete' | 'delete_bulk';
@@ -16,8 +17,8 @@ type TasksStore = {
   error: string | null;
   pendingAction: PendingAction | null;
   fetchTasks: () => Promise<void>;
-  createTask: (title: string, dueDate?: string) => Promise<void>;
-  updateTask: (id: string, title: string, dueDate?: string | null) => Promise<void>;
+  createTask: (title: string, dueDate?: string, priority?: number, projectId?: string | null, recurrenceRule?: string) => Promise<void>;
+  updateTask: (id: string, title: string, dueDate?: string | null, priority?: number, projectId?: string | null, recurrenceRule?: string) => Promise<void>;
   importTasks: (titles: string[]) => Promise<void>;
   completeTask: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -53,13 +54,16 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     }
   },
 
-  createTask: async (title, dueDate?) => {
-    const task = await apiCreateTask(title, 4, dueDate);
+  createTask: async (title, dueDate?, priority = 4, projectId?, recurrenceRule = 'none') => {
+    const task = await apiCreateTask(title, priority, dueDate, projectId, recurrenceRule);
+    if (dueDate) scheduleTaskNotification(task.id, title, new Date(dueDate)).catch(() => {});
     set({ tasks: [task, ...get().tasks] });
   },
 
-  updateTask: async (id, title, dueDate) => {
-    const updated = await apiUpdateTask(id, { title, dueDate: dueDate ?? null });
+  updateTask: async (id, title, dueDate, priority, projectId, recurrenceRule) => {
+    const updated = await apiUpdateTask(id, { title, dueDate: dueDate ?? null, priority, projectId, recurrenceRule });
+    if (dueDate) scheduleTaskNotification(id, title, new Date(dueDate)).catch(() => {});
+    else cancelTaskNotification(id).catch(() => {});
     set({ tasks: get().tasks.map(t => t.id === id ? updated : t) });
   },
 
@@ -82,6 +86,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     }, 4000);
 
     set({ pendingAction: { type: 'complete', task, timer } });
+    cancelTaskNotification(id).catch(() => {});
   },
 
   deleteTask: (id) => {
@@ -98,6 +103,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     }, 4000);
 
     set({ pendingAction: { type: 'delete', task, timer } });
+    cancelTaskNotification(id).catch(() => {});
   },
 
   deleteTasksBulk: (ids) => {
@@ -114,6 +120,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     }, 4000);
 
     set({ pendingAction: { type: 'delete_bulk', task: deletedTasks[0], tasks: deletedTasks, count: deletedTasks.length, timer } });
+    ids.forEach(id => cancelTaskNotification(id).catch(() => {}));
   },
 
   reorderTasks: async (orderedIds) => {

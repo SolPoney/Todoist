@@ -7,36 +7,40 @@ export type ApiTask = {
   priority: number;
   dueDate: string | null;
   isRecurring: boolean;
+  recurrenceRule: string;
   createdAt: string;
   projectId: string | null;
-  project: { id: string; name: string } | null;
+  project: { id: string; name: string; color: string } | null;
 };
 
 export function apiGetTasks(): Promise<ApiTask[]> {
   return apiFetch('/api/tasks');
 }
 
-export function apiCreateTask(title: string, priority = 4, dueDate?: string): Promise<ApiTask> {
+export function apiCreateTask(
+  title: string,
+  priority = 4,
+  dueDate?: string,
+  projectId?: string | null,
+  recurrenceRule = 'none',
+): Promise<ApiTask> {
   return apiFetch('/api/tasks', {
     method: 'POST',
-    body: JSON.stringify({ title, priority, ...(dueDate ? { dueDate } : {}) }),
+    body: JSON.stringify({ title, priority, ...(dueDate ? { dueDate } : {}), projectId: projectId ?? null, recurrenceRule }),
   });
 }
 
 export function apiCompleteTask(id: string): Promise<ApiTask> {
-  return apiFetch(`/api/tasks/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ isCompleted: true }),
-  });
+  return apiFetch(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify({ isCompleted: true }) });
 }
 
 export function apiDeleteTask(id: string): Promise<null> {
   return apiFetch(`/api/tasks/${id}`, { method: 'DELETE' });
 }
 
-export function apiUpdateTask(id: string, data: { title?: string; dueDate?: string | null }): Promise<ApiTask> {
-  return apiFetch(`/api/tasks/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+export function apiUpdateTask(
+  id: string,
+  data: { title?: string; dueDate?: string | null; priority?: number; projectId?: string | null; recurrenceRule?: string },
+): Promise<ApiTask> {
+  return apiFetch(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
 }

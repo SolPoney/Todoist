@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import tasksRouter from './routes/tasks';
+import projectsRouter from './routes/projects';
 import authRouter from './routes/auth';
 import { requireAuth } from './middleware/auth';
 
@@ -17,6 +18,7 @@ app.use('/auth', authRouter);
 
 // Routes protégées (token JWT obligatoire)
 app.use('/api/tasks', requireAuth, tasksRouter);
+app.use('/api/projects', requireAuth, projectsRouter);
 
 // Route de santé
 app.get('/health', (_req, res) => {

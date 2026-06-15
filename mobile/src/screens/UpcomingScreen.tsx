@@ -54,7 +54,7 @@ export function UpcomingScreen() {
       </TouchableOpacity>
 
       {/* Calendrier semaine */}
-      <View style={styles.weekCalendar} accessibilityRole="grid" accessibilityLabel="Calendrier de la semaine">
+      <View style={styles.weekCalendar} accessibilityLabel="Calendrier de la semaine">
         {weekDays.map((day, i) => (
           <View key={i} style={styles.dayColumn} accessible accessibilityLabel={`${day.label} ${day.number}${day.isToday ? ', aujourd\'hui' : ''}`}>
             <Text style={styles.dayLabel} accessibilityElementsHidden>{day.label}</Text>

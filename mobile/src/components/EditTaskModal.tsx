@@ -9,6 +9,8 @@ import { ColorTheme } from '../theme/colors';
 import { fontSize, lineHeight, letterSpacing } from '../theme/typography';
 import { useProjectsStore } from '../stores/projectsStore';
 
+type ActivePicker = 'date' | 'priority' | 'project' | 'recurrence' | null;
+
 type Props = {
   visible: boolean;
   onClose: () => void;
@@ -24,13 +26,13 @@ const PRIORITY_OPTIONS = [
   { value: 1, label: 'P1', color: '#EF4444' },
   { value: 2, label: 'P2', color: '#F59E0B' },
   { value: 3, label: 'P3', color: '#3B82F6' },
-  { value: 4, label: 'P4', color: null }, // uses textMuted
+  { value: 4, label: 'P4', color: null },
 ];
 
 const RECURRENCE_OPTIONS = [
   { value: 'none', label: 'Jamais' },
   { value: 'daily', label: 'Quotidien' },
-  { value: 'weekly', label: 'Hebdo' },
+  { value: 'weekly', label: 'Hebdomadaire' },
   { value: 'monthly', label: 'Mensuel' },
 ];
 
@@ -40,31 +42,26 @@ function formatDateFR(date: Date): string {
 
 export function EditTaskModal({
   visible, onClose, onSubmit,
-  initialTitle, initialDueDate,
-  initialPriority, initialProjectId, initialRecurrenceRule,
+  initialTitle, initialDueDate, initialPriority, initialProjectId, initialRecurrenceRule,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
-  const [dueDate, setDueDate] = useState<Date | null>(
-    initialDueDate ? new Date(initialDueDate) : null
-  );
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dueDate, setDueDate] = useState<Date | null>(initialDueDate ? new Date(initialDueDate) : null);
   const [priority, setPriority] = useState(initialPriority ?? 4);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialProjectId ?? null);
   const [recurrenceRule, setRecurrenceRule] = useState(initialRecurrenceRule ?? 'none');
+  const [activePicker, setActivePicker] = useState<ActivePicker>(null);
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-
   const { projects, fetchProjects } = useProjectsStore();
 
-  // Sync with props when modal opens
   useEffect(() => {
     if (visible) {
       setTitle(initialTitle);
       setDueDate(initialDueDate ? new Date(initialDueDate) : null);
-      setShowDatePicker(false);
       setPriority(initialPriority ?? 4);
       setSelectedProjectId(initialProjectId ?? null);
       setRecurrenceRule(initialRecurrenceRule ?? 'none');
+      setActivePicker(null);
       fetchProjects().catch(() => {});
     }
   }, [visible, initialTitle, initialDueDate, initialPriority, initialProjectId, initialRecurrenceRule]);
@@ -75,30 +72,28 @@ export function EditTaskModal({
     onClose();
   }
 
-  function handleClose() {
-    setShowDatePicker(false);
-    onClose();
+  function togglePicker(picker: ActivePicker) {
+    setActivePicker(prev => prev === picker ? null : picker);
   }
 
   function selectDate(offset: number | null) {
-    if (offset === null) {
-      setDueDate(null);
-    } else {
+    if (offset === null) { setDueDate(null); }
+    else {
       const d = new Date();
       d.setDate(d.getDate() + offset);
       d.setHours(0, 0, 0, 0);
       setDueDate(d);
     }
-    setShowDatePicker(false);
+    setActivePicker(null);
   }
 
+  const priorityColor = PRIORITY_OPTIONS.find(p => p.value === priority)?.color ?? colors.textMuted;
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <TouchableOpacity style={styles.backdrop} onPress={handleClose} activeOpacity={1} accessibilityLabel="Fermer le formulaire" accessibilityRole="button" />
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} accessibilityLabel="Fermer" accessibilityRole="button" />
 
         <View style={styles.sheet} accessibilityViewIsModal>
           <View style={styles.handle} accessibilityElementsHidden />
@@ -116,148 +111,165 @@ export function EditTaskModal({
             returnKeyType="done"
             color={colors.text}
             accessibilityLabel="Nom de la tâche"
-            accessibilityHint="Modifiez le nom de votre tâche"
           />
 
-          {/* Bouton date ou date sélectionnée */}
-          <TouchableOpacity
-            style={styles.dateBtn}
-            onPress={() => setShowDatePicker(v => !v)}
-            accessibilityLabel={dueDate ? `Date d'échéance : ${formatDateFR(dueDate)}` : "Ajouter une date d'échéance"}
-            accessibilityRole="button"
-          >
-            <Ionicons name="calendar-outline" size={16} color={dueDate ? colors.accent : colors.textSecondary} accessibilityElementsHidden />
-            <Text style={[styles.dateBtnText, dueDate ? styles.dateBtnTextActive : null]}>
-              {dueDate ? formatDateFR(dueDate) : 'Ajouter une date'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Sélecteur de date inline */}
-          {showDatePicker && (
-            <View style={styles.dateOptions} accessibilityRole="toolbar" accessibilityLabel="Choisir une date">
-              <View style={styles.dateOptionsRow}>
+          {/* Picker inline */}
+          {activePicker === 'date' && (
+            <View style={styles.pickerBox}>
+              <View style={styles.dateRow}>
                 <TouchableOpacity style={styles.dateOption} onPress={() => selectDate(0)} accessibilityRole="button" accessibilityLabel="Aujourd'hui">
+                  <Ionicons name="today-outline" size={16} color={colors.text} accessibilityElementsHidden />
                   <Text style={styles.dateOptionText}>Aujourd'hui</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.dateOption} onPress={() => selectDate(1)} accessibilityRole="button" accessibilityLabel="Demain">
+                  <Ionicons name="calendar-outline" size={16} color={colors.text} accessibilityElementsHidden />
                   <Text style={styles.dateOptionText}>Demain</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.dateOptionsRow}>
+              <View style={styles.dateRow}>
                 <TouchableOpacity style={styles.dateOption} onPress={() => selectDate(7)} accessibilityRole="button" accessibilityLabel="Dans 7 jours">
+                  <Ionicons name="calendar-outline" size={16} color={colors.text} accessibilityElementsHidden />
                   <Text style={styles.dateOptionText}>Dans 7 jours</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.dateOption, styles.dateOptionClear]} onPress={() => selectDate(null)} accessibilityRole="button" accessibilityLabel="Effacer la date">
-                  <Text style={[styles.dateOptionText, styles.dateOptionClearText]}>Effacer</Text>
+                  <Ionicons name="close-circle-outline" size={16} color={colors.textMuted} accessibilityElementsHidden />
+                  <Text style={[styles.dateOptionText, { color: colors.textMuted }]}>Effacer</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
-          {/* Priorité */}
-          <View style={styles.sectionRow} accessible={false}>
-            <Text style={styles.sectionLabel}>Priorité</Text>
-            <View style={styles.chipRow} accessible={false}>
-              {PRIORITY_OPTIONS.map(opt => {
-                const chipColor = opt.color ?? colors.textMuted;
-                const isSelected = priority === opt.value;
-                return (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => setPriority(opt.value)}
-                    style={[
-                      styles.priorityChip,
-                      { borderColor: chipColor },
-                      isSelected && { backgroundColor: chipColor },
-                    ]}
-                    accessibilityLabel={`Priorité ${opt.label}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <Text style={[styles.priorityChipText, { color: isSelected ? '#fff' : chipColor }]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+          {activePicker === 'priority' && (
+            <View style={styles.pickerBox}>
+              <View style={styles.priorityRow}>
+                {PRIORITY_OPTIONS.map(opt => {
+                  const c = opt.color ?? colors.textMuted;
+                  const sel = priority === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      onPress={() => { setPriority(opt.value); setActivePicker(null); }}
+                      style={[styles.priorityBtn, { borderColor: c }, sel && { backgroundColor: c }]}
+                      accessibilityLabel={`Priorité ${opt.label}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: sel }}
+                    >
+                      <Ionicons name="flag" size={14} color={sel ? '#fff' : c} accessibilityElementsHidden />
+                      <Text style={[styles.priorityBtnText, { color: sel ? '#fff' : c }]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* Projet */}
-          <View style={styles.sectionRow} accessible={false}>
-            <Text style={styles.sectionLabel}>Projet</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll} contentContainerStyle={styles.chipRow}>
+          {activePicker === 'project' && (
+            <View style={styles.pickerBox}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.projectRow}>
+                <TouchableOpacity
+                  onPress={() => { setSelectedProjectId(null); setActivePicker(null); }}
+                  style={[styles.projectBtn, selectedProjectId === null && styles.projectBtnSelected]}
+                  accessibilityLabel="Boîte de réception"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="inbox-outline" size={14} color={selectedProjectId === null ? '#fff' : colors.text} accessibilityElementsHidden />
+                  <Text style={[styles.projectBtnText, selectedProjectId === null && { color: '#fff' }]}>Boîte de réception</Text>
+                </TouchableOpacity>
+                {projects.map(p => {
+                  const sel = selectedProjectId === p.id;
+                  return (
+                    <TouchableOpacity
+                      key={p.id}
+                      onPress={() => { setSelectedProjectId(p.id); setActivePicker(null); }}
+                      style={[styles.projectBtn, sel && { backgroundColor: p.color, borderColor: p.color }]}
+                      accessibilityLabel={`Projet ${p.name}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: sel }}
+                    >
+                      <View style={[styles.projectDot, { backgroundColor: p.color }]} accessibilityElementsHidden />
+                      <Text style={[styles.projectBtnText, sel && { color: '#fff' }]}>{p.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {activePicker === 'recurrence' && (
+            <View style={styles.pickerBox}>
+              <View style={styles.recurrenceRow}>
+                {RECURRENCE_OPTIONS.map(opt => {
+                  const sel = recurrenceRule === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      onPress={() => { setRecurrenceRule(opt.value); setActivePicker(null); }}
+                      style={[styles.recurrenceBtn, sel && styles.recurrenceBtnSelected]}
+                      accessibilityLabel={opt.label}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: sel }}
+                    >
+                      <Text style={[styles.recurrenceBtnText, sel && { color: '#fff' }]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Barre d'actions */}
+          <View style={styles.actionBar}>
+            <View style={styles.actionChips}>
               <TouchableOpacity
-                onPress={() => setSelectedProjectId(null)}
-                style={[styles.projectChip, selectedProjectId === null && styles.projectChipSelected]}
-                accessibilityLabel="Aucun projet"
+                style={[styles.chip, dueDate && styles.chipActive, activePicker === 'date' && styles.chipOpen]}
+                onPress={() => togglePicker('date')}
+                accessibilityLabel={dueDate ? `Date : ${formatDateFR(dueDate)}` : "Ajouter une date"}
                 accessibilityRole="button"
-                accessibilityState={{ selected: selectedProjectId === null }}
               >
-                <Text style={[styles.projectChipText, selectedProjectId === null && styles.projectChipTextSelected]}>
-                  Aucun
-                </Text>
+                <Ionicons name="calendar-outline" size={15} color={dueDate ? colors.accent : colors.textSecondary} accessibilityElementsHidden />
+                {dueDate && <Text style={styles.chipText}>{formatDateFR(dueDate)}</Text>}
               </TouchableOpacity>
-              {projects.map(p => {
-                const isSelected = selectedProjectId === p.id;
-                return (
-                  <TouchableOpacity
-                    key={p.id}
-                    onPress={() => setSelectedProjectId(p.id)}
-                    style={[styles.projectChip, isSelected && { backgroundColor: p.color, borderColor: p.color }]}
-                    accessibilityLabel={`Projet ${p.name}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <View style={[styles.projectDot, { backgroundColor: p.color }]} accessibilityElementsHidden />
-                    <Text style={[styles.projectChipText, isSelected && styles.projectChipTextSelected]}>
-                      {p.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
 
-          {/* Récurrence */}
-          <View style={styles.sectionRow} accessible={false}>
-            <Text style={styles.sectionLabel}>Récurrence</Text>
-            <View style={styles.chipRow} accessible={false}>
-              {RECURRENCE_OPTIONS.map(opt => {
-                const isSelected = recurrenceRule === opt.value;
-                return (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => setRecurrenceRule(opt.value)}
-                    style={[styles.recurrenceChip, isSelected && styles.recurrenceChipSelected]}
-                    accessibilityLabel={opt.label}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                  >
-                    <Text style={[styles.recurrenceChipText, isSelected && styles.recurrenceChipTextSelected]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              <TouchableOpacity
+                style={[styles.chip, priority !== 4 && styles.chipActive, activePicker === 'priority' && styles.chipOpen]}
+                onPress={() => togglePicker('priority')}
+                accessibilityLabel={`Priorité ${PRIORITY_OPTIONS.find(p => p.value === priority)?.label}`}
+                accessibilityRole="button"
+              >
+                <Ionicons name="flag-outline" size={15} color={priority !== 4 ? priorityColor : colors.textSecondary} accessibilityElementsHidden />
+                {priority !== 4 && <Text style={[styles.chipText, { color: priorityColor }]}>{PRIORITY_OPTIONS.find(p => p.value === priority)?.label}</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.chip, !!selectedProjectId && styles.chipActive, activePicker === 'project' && styles.chipOpen]}
+                onPress={() => togglePicker('project')}
+                accessibilityLabel={selectedProject ? `Projet : ${selectedProject.name}` : "Boîte de réception"}
+                accessibilityRole="button"
+              >
+                <Ionicons name="folder-outline" size={15} color={selectedProject ? selectedProject.color : colors.textSecondary} accessibilityElementsHidden />
+                {selectedProject && <Text style={[styles.chipText, { color: selectedProject.color }]}>{selectedProject.name}</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.chip, recurrenceRule !== 'none' && styles.chipActive, activePicker === 'recurrence' && styles.chipOpen]}
+                onPress={() => togglePicker('recurrence')}
+                accessibilityLabel={`Récurrence : ${RECURRENCE_OPTIONS.find(r => r.value === recurrenceRule)?.label}`}
+                accessibilityRole="button"
+              >
+                <Ionicons name="repeat-outline" size={15} color={recurrenceRule !== 'none' ? colors.accent : colors.textSecondary} accessibilityElementsHidden />
+                {recurrenceRule !== 'none' && <Text style={styles.chipText}>{RECURRENCE_OPTIONS.find(r => r.value === recurrenceRule)?.label}</Text>}
+              </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.actions} accessible={false}>
-            <TouchableOpacity onPress={handleClose} style={styles.cancelBtn} accessibilityLabel="Annuler" accessibilityRole="button">
-              <Ionicons name="close" size={22} color={colors.textSecondary} accessibilityElementsHidden />
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={handleSubmit}
-              style={[styles.submitBtn, !title.trim() ? styles.submitBtnDisabled : null]}
               disabled={!title.trim()}
-              accessibilityLabel="Enregistrer les modifications"
+              style={[styles.submitBtn, !title.trim() && styles.submitBtnDisabled]}
+              accessibilityLabel="Enregistrer"
               accessibilityRole="button"
               accessibilityState={{ disabled: !title.trim() }}
             >
-              <Text style={[styles.submitBtnText, !title.trim() ? styles.submitBtnTextDisabled : null]}>
-                Enregistrer
-              </Text>
+              <Ionicons name="checkmark" size={18} color="#fff" accessibilityElementsHidden />
             </TouchableOpacity>
           </View>
         </View>
@@ -268,199 +280,77 @@ export function EditTaskModal({
 
 function createStyles(colors: ColorTheme) {
   return StyleSheet.create({
-    overlay: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-    },
+    overlay: { flex: 1, justifyContent: 'flex-end' },
+    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
     sheet: {
       backgroundColor: colors.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      padding: 20,
-      paddingBottom: 36,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 16,
+      paddingBottom: 32,
       gap: 12,
     },
     handle: {
-      width: 36,
-      height: 4,
-      borderRadius: 2,
+      width: 36, height: 4, borderRadius: 2,
       backgroundColor: colors.border,
-      alignSelf: 'center',
-      marginBottom: 8,
+      alignSelf: 'center', marginBottom: 4,
     },
     label: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      textTransform: 'uppercase',
-      letterSpacing: letterSpacing.wide,
+      fontSize: fontSize.sm, lineHeight: lineHeight.sm,
+      color: colors.textSecondary, fontWeight: '600',
+      textTransform: 'uppercase', letterSpacing: letterSpacing.wide,
     },
     input: {
-      fontSize: fontSize.lg,
-      lineHeight: lineHeight.lg,
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      fontSize: fontSize.lg, lineHeight: lineHeight.lg,
+      color: colors.text, paddingVertical: 4, minHeight: 40,
     },
-    dateBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 6,
+    pickerBox: {
+      backgroundColor: colors.background, borderRadius: 12, padding: 12, gap: 8,
     },
-    dateBtnText: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      color: colors.textSecondary,
-      flex: 1,
-    },
-    dateBtnTextActive: {
-      color: colors.accent,
-      fontWeight: '500',
-    },
-    dateOptions: {
-      flexDirection: 'column',
-      gap: 8,
-    },
-    dateOptionsRow: {
-      flexDirection: 'row',
-      gap: 8,
-    },
+    dateRow: { flexDirection: 'row', gap: 8 },
     dateOption: {
-      flex: 1,
-      backgroundColor: colors.border,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
-      justifyContent: 'center',
+      flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6,
+      backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8,
     },
-    dateOptionText: {
-      color: colors.text,
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      textAlign: 'center',
+    dateOptionText: { color: colors.text, fontSize: fontSize.sm, lineHeight: lineHeight.sm },
+    dateOptionClear: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+    priorityRow: { flexDirection: 'row', gap: 8 },
+    priorityBtn: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 6, paddingVertical: 8, borderRadius: 8, borderWidth: 2,
     },
-    dateOptionClear: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: colors.border,
+    priorityBtnText: { fontSize: fontSize.sm, fontWeight: '700', lineHeight: lineHeight.sm },
+    projectRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
+    projectBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
     },
-    dateOptionClearText: {
-      color: colors.textMuted,
+    projectBtnSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    projectBtnText: { fontSize: fontSize.sm, color: colors.text, lineHeight: lineHeight.sm },
+    projectDot: { width: 8, height: 8, borderRadius: 4 },
+    recurrenceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    recurrenceBtn: {
+      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
     },
-    sectionRow: {
-      gap: 8,
+    recurrenceBtnSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    recurrenceBtnText: { fontSize: fontSize.sm, color: colors.text, lineHeight: lineHeight.sm },
+    actionBar: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4,
     },
-    sectionLabel: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      textTransform: 'uppercase',
-      letterSpacing: letterSpacing.wide,
+    actionChips: { flexDirection: 'row', gap: 4, flex: 1 },
+    chip: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8,
     },
-    chipRow: {
-      flexDirection: 'row',
-      gap: 8,
-      flexWrap: 'wrap',
-    },
-    horizontalScroll: {
-      flexGrow: 0,
-    },
-    priorityChip: {
-      paddingHorizontal: 14,
-      paddingVertical: 6,
-      borderRadius: 20,
-      borderWidth: 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    priorityChipText: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      fontWeight: '600',
-    },
-    projectChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.border,
-      gap: 6,
-    },
-    projectChipSelected: {
-      borderColor: colors.accent,
-      backgroundColor: colors.accent,
-    },
-    projectChipText: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      color: colors.text,
-    },
-    projectChipTextSelected: {
-      color: '#fff',
-      fontWeight: '600',
-    },
-    projectDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    recurrenceChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.border,
-    },
-    recurrenceChipSelected: {
-      borderColor: colors.accent,
-      backgroundColor: colors.accent,
-    },
-    recurrenceChipText: {
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-      color: colors.text,
-    },
-    recurrenceChipTextSelected: {
-      color: '#fff',
-      fontWeight: '600',
-    },
-    actions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: 4,
-    },
-    cancelBtn: {
-      padding: 8,
-    },
+    chipActive: { backgroundColor: colors.background },
+    chipOpen: { backgroundColor: colors.border },
+    chipText: { fontSize: fontSize.sm, color: colors.accent, lineHeight: lineHeight.sm },
     submitBtn: {
-      backgroundColor: colors.accent,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 10,
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center',
     },
-    submitBtnDisabled: {
-      backgroundColor: colors.border,
-    },
-    submitBtnText: {
-      color: '#fff',
-      fontSize: fontSize.md,
-      lineHeight: lineHeight.md,
-      fontWeight: '600',
-    },
-    submitBtnTextDisabled: {
-      color: colors.textMuted,
-    },
+    submitBtnDisabled: { backgroundColor: colors.border },
   });
 }

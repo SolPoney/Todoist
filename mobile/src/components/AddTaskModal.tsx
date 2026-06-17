@@ -358,7 +358,7 @@ function createStyles(colors: ColorTheme) {
     chipRow: {
       flexDirection: 'row',
       gap: 8,
-      flexWrap: 'nowrap',
+      flexWrap: 'wrap',
     },
     horizontalScroll: {
       flexGrow: 0,

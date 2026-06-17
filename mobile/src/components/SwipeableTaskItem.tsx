@@ -57,7 +57,7 @@ export function SwipeableTaskItem({ task, onComplete, onDelete, onEdit, isSelect
 
   function handleLongPress() {
     if (!isSelecting) {
-      onLongPress?.(task.id);
+      setExpanded(true);
     }
   }
 
